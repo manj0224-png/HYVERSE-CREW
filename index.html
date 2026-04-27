@@ -335,6 +335,33 @@ body { min-height: 100vh; }
 .mb-12 { margin-bottom: 12px; }
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
+/* Run type info button + helper-text + tooltip */
+.info-btn { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 11px; cursor: pointer; vertical-align: middle; margin-left: 6px; line-height: 1; padding: 0; transition: all 0.15s; font-family: 'JetBrains Mono', monospace; }
+.info-btn:hover { color: var(--brand); border-color: var(--brand); }
+.info-btn.on { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
+@media (max-width: 480px) { .info-btn { width: 24px; height: 24px; font-size: 13px; } }
+.helper-text { font-size: 11px; color: var(--text-soft); font-style: italic; margin-top: 4px; min-height: 14px; }
+.type-tooltip { margin-top: 8px; padding: 12px; background: var(--bg-muted); border-radius: 8px; font-size: 12px; }
+.tt-row { display: flex; gap: 10px; padding: 5px 0; line-height: 1.5; }
+.tt-row + .tt-row { border-top: 1px solid var(--border); }
+.tt-name { font-weight: 500; min-width: 56px; color: var(--text); }
+.tt-desc { color: var(--text-muted); flex: 1; }
+
+/* Help tab */
+.help-row { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; padding: 12px 0; }
+.help-row + .help-row { border-top: 1px solid var(--border); }
+.help-row .chip, .help-row .zone { align-self: flex-start; flex-shrink: 0; }
+.help-text { font-size: 13px; color: var(--text); line-height: 1.55; }
+.help-tip { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+.help-pace-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; padding: 10px 0; font-size: 13px; }
+.help-pace-row + .help-pace-row { border-top: 1px solid var(--border); }
+.help-pace-dist { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text); font-size: 12px; }
+.help-pace-range { color: var(--text-muted); }
+.help-tips-list { padding-left: 20px; font-size: 13px; line-height: 1.8; color: var(--text); }
+.help-tips-list li { padding: 2px 0; }
+.help-note { padding: 10px 12px; background: var(--brand-soft); border-radius: 6px; font-size: 12px; color: var(--brand-dark); margin-top: 10px; }
+@media (prefers-color-scheme: dark) { .help-note { color: var(--brand); } }
+
 /* Boot loader (Supabase fetch in progress) */
 #boot-loader { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
 #boot-loader.gone { opacity: 0; pointer-events: none; }
@@ -544,6 +571,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
     <button class="tab" data-tab="members"><span class="tab-num">08</span>크루원 관리</button>
     <button class="tab" data-tab="report"><span class="tab-num">09</span>월별 리포트</button>
     <button class="tab" data-tab="crewreport"><span class="tab-num">10</span>크루 리포트</button>
+    <button class="tab" data-tab="help"><span class="tab-num">11</span>도움말</button>
   </nav>
 
   <!-- ============ 01 DASHBOARD ============ -->
@@ -623,7 +651,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
               <input class="input" type="date" id="f-date" required />
             </div>
             <div class="field">
-              <label>런 종류</label>
+              <label>런 종류 <button type="button" class="info-btn" id="f-type-info" title="런 종류 설명 보기" aria-label="런 종류 설명 보기">ⓘ</button></label>
               <select class="select" id="f-type">
                 <option value="easy">이지런</option>
                 <option value="tempo">템포런</option>
@@ -631,6 +659,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
                 <option value="interval">인터벌</option>
                 <option value="race">대회</option>
               </select>
+              <div class="helper-text" id="f-type-help"></div>
+              <div class="type-tooltip" id="f-type-tooltip" style="display:none;"></div>
             </div>
             <div class="field">
               <label>거리 (km)</label>
@@ -956,6 +986,17 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 
     <div id="cr-content"></div>
   </section>
+
+  <!-- ============ 11 HELP ============ -->
+  <section class="panel" data-panel="help">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">HELP</h2>
+        <div class="panel-sub">런 종류 · 심박존 · 페이스 가이드</div>
+      </div>
+    </div>
+    <div id="help-content"></div>
+  </section>
 </div>
 
 <!-- Modal -->
@@ -1049,6 +1090,46 @@ const daysDiff = (dateStr) => { const d = new Date(dateStr); const t = new Date(
 const weatherEmoji = w => ({ '맑음':'☀️','흐림':'☁️','비':'🌧️','더움':'🌡️','추움':'❄️','바람':'💨' }[w] || '');
 const typeLabel = t => ({ easy:'이지', tempo:'템포', long:'롱런', interval:'인터벌', race:'대회' }[t] || t);
 
+const TYPE_DESC = {
+  easy: '대화 가능한 편안한 페이스, 회복 런',
+  tempo: '빠르지만 유지 가능한 페이스 (20~40분)',
+  race: '실제 대회 참가 기록',
+  long: '평소보다 긴 거리 (보통 90분 이상)',
+  interval: '짧은 전력질주 + 회복 반복',
+};
+const TYPE_TIPS = {
+  easy: '주 50~70% 차지가 이상적',
+  tempo: '역치 페이스 향상에 효과적',
+  race: '본인 페이스 최고치 확인용',
+  long: '지구력 향상, 대회 준비',
+  interval: '스피드와 심폐 능력 향상',
+};
+const TYPE_ORDER = ['easy', 'tempo', 'race', 'long', 'interval'];
+
+function typeTooltipHtml() {
+  return TYPE_ORDER.map(t => `<div class="tt-row"><span class="tt-name">${typeLabel(t)}</span><span class="tt-desc">${TYPE_DESC[t]}</span></div>`).join('');
+}
+function updateTypeHelper(prefix) {
+  const sel = document.getElementById(`${prefix}-type`);
+  const help = document.getElementById(`${prefix}-type-help`);
+  if (!sel || !help) return;
+  help.textContent = TYPE_DESC[sel.value] || '';
+}
+function setupTypeUI(prefix) {
+  const tt = document.getElementById(`${prefix}-type-tooltip`);
+  const btn = document.getElementById(`${prefix}-type-info`);
+  const sel = document.getElementById(`${prefix}-type`);
+  if (!tt || !btn || !sel) return;
+  tt.innerHTML = typeTooltipHtml();
+  btn.onclick = () => {
+    const open = tt.style.display !== 'none';
+    tt.style.display = open ? 'none' : 'block';
+    btn.classList.toggle('on', !open);
+  };
+  sel.addEventListener('change', () => updateTypeHelper(prefix));
+  updateTypeHelper(prefix);
+}
+
 const AVATAR_COLORS = ['#00C4A0','#f59e0b','#6366f1','#ec4899','#dc2626','#16a34a','#0ea5e9','#8b5cf6','#d97706','#14b8a6'];
 const avatarColor = (name) => { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return AVATAR_COLORS[h % AVATAR_COLORS.length]; };
 const avatarHtml = name => `<div class="avatar" style="background:${avatarColor(name)}">${(name||'?').slice(0,1)}</div>`;
@@ -1091,7 +1172,74 @@ $$('.tab').forEach(t => t.addEventListener('click', () => {
   if (name === 'members') renderMembers();
   if (name === 'report') renderReportPanel();
   if (name === 'crewreport') renderCrewReport();
+  if (name === 'help') renderHelp();
 }));
+
+function renderHelp() {
+  const root = $('#help-content');
+  if (!root || root.dataset.rendered === '1') return;
+  const HR = [
+    { z: 1, range: '~115 bpm', desc: '워밍업 / 완전 회복' },
+    { z: 2, range: '115~135 bpm', desc: '이지런, 지방 연소 구간' },
+    { z: 3, range: '135~155 bpm', desc: '템포런, 유산소 능력 향상' },
+    { z: 4, range: '155~175 bpm', desc: '역치 구간, 레이스 페이스' },
+    { z: 5, range: '175+ bpm', desc: '인터벌, 최대 강도' },
+  ];
+  const PACE = [
+    { dist: '5K 대회', range: '보통 5:00 ~ 6:00 /km (25~30분)' },
+    { dist: '10K 대회', range: '보통 5:15 ~ 6:15 /km (53~63분)' },
+    { dist: '하프마라톤', range: '보통 5:30 ~ 6:30 /km (1:55~2:15)' },
+    { dist: '풀마라톤', range: '보통 5:45 ~ 7:00 /km (4:00~5:00)' },
+  ];
+  root.innerHTML = `
+    <div class="card mb-12">
+      <div class="card-title">런 종류 <span class="card-title-sub">RUN TYPES</span></div>
+      ${TYPE_ORDER.map(t => `
+        <div class="help-row">
+          <span class="chip ${t}">${typeLabel(t)}</span>
+          <div class="help-text">
+            <div>${TYPE_DESC[t]}</div>
+            <div class="help-tip">💡 ${TYPE_TIPS[t]}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card mb-12">
+      <div class="card-title">심박존 가이드 <span class="card-title-sub">HEART RATE ZONES</span></div>
+      ${HR.map(x => `
+        <div class="help-row">
+          <span class="zone z${x.z}" style="min-width:42px; padding:6px 10px;"><span class="zn">Z${x.z}</span></span>
+          <div class="help-text">
+            <div><strong>${x.range}</strong></div>
+            <div class="help-tip" style="font-style:normal;">${x.desc}</div>
+          </div>
+        </div>`).join('')}
+      <div class="help-note">최대 심박수(HRmax)는 사람마다 다르므로 위 수치는 일반적인 추정치입니다.</div>
+    </div>
+
+    <div class="card mb-12">
+      <div class="card-title">페이스 가이드 <span class="card-title-sub">PACE GUIDE</span></div>
+      ${PACE.map(p => `
+        <div class="help-pace-row">
+          <span class="help-pace-dist">${p.dist}</span>
+          <span class="help-pace-range">${p.range}</span>
+        </div>`).join('')}
+      <div class="help-note">본인의 페이스는 사람마다 달라요. 위 수치는 일반적인 아마추어 기준이니 참고만 하세요.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">사용 팁 <span class="card-title-sub">TIPS</span></div>
+      <ul class="help-tips-list">
+        <li>매일 기록 안 해도 OK — 귀찮으면 패스</li>
+        <li>구간 스플릿은 선택 입력 — 필수 아님</li>
+        <li>정기런 참석 체크는 가벼운 마음으로</li>
+        <li>다른 크루원이 추가한 기록은 자동으로 보여요</li>
+        <li>모바일 브라우저에서 "홈 화면에 추가" 하면 앱처럼 사용 가능</li>
+      </ul>
+    </div>
+  `;
+  root.dataset.rendered = '1';
+}
 
 /* ---------- 5. MEMBER SELECT SYNC ---------- */
 function refreshMemberSelects() {
@@ -1400,9 +1548,14 @@ function openEditRun(id) {
     <div class="form-grid">
       <div class="field"><label>크루원</label><select class="select" id="e-name">${members.map(x=>`<option ${x.name===r.name?'selected':''}>${x.name}</option>`).join('')}</select></div>
       <div class="field"><label>날짜</label><input class="input" type="date" id="e-date" value="${r.date}" /></div>
-      <div class="field"><label>런 종류</label><select class="select" id="e-type">
-        ${['easy','tempo','long','interval','race'].map(t=>`<option value="${t}" ${t===r.type?'selected':''}>${typeLabel(t)}</option>`).join('')}
-      </select></div>
+      <div class="field">
+        <label>런 종류 <button type="button" class="info-btn" id="e-type-info" title="런 종류 설명 보기" aria-label="런 종류 설명 보기">ⓘ</button></label>
+        <select class="select" id="e-type">
+          ${['easy','tempo','long','interval','race'].map(t=>`<option value="${t}" ${t===r.type?'selected':''}>${typeLabel(t)}</option>`).join('')}
+        </select>
+        <div class="helper-text" id="e-type-help"></div>
+        <div class="type-tooltip" id="e-type-tooltip" style="display:none;"></div>
+      </div>
       <div class="field"><label>거리 (km)</label><input class="input" type="number" step="0.01" id="e-dist" value="${r.dist}" /></div>
       <div class="field"><label>페이스</label><input class="input" id="e-pace" value="${r.paceStr}" pattern="^\\d{1,2}:\\d{2}$" /></div>
       <div class="field"><label>심박수</label><input class="input" type="number" id="e-hr" value="${r.hr||''}" /></div>
@@ -1423,6 +1576,7 @@ function openEditRun(id) {
     </div>`;
   $('#modal-backdrop').classList.add('active');
   $('#e-cancel').onclick = () => $('#modal-backdrop').classList.remove('active');
+  setupTypeUI('e');
 
   // Pre-populate splits if existing
   if (r.splits && r.splits.length) {
@@ -2277,6 +2431,7 @@ async function init() {
   }
 
   refreshMemberSelects();
+  setupTypeUI('f');
   renderDashboard();
   setupRealtime();
   hideBootLoader();
