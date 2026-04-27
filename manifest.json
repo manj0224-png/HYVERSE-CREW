@@ -1,12 +1,12 @@
 {
-  "name": "HYVERSE Running Crew",
+  "name": "TEAM HYVERSE Running Crew",
   "short_name": "HYVERSE",
   "description": "러닝크루 HYVERSE 기록 트래커",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#1A2433",
-  "theme_color": "#5A8AB5",
+  "background_color": "#1A1A1A",
+  "theme_color": "#B5E300",
   "orientation": "portrait",
   "lang": "ko",
   "icons": [

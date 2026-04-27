@@ -7,7 +7,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="./manifest.json" />
-<meta name="theme-color" content="#5A8AB5" />
+<meta name="theme-color" content="#B5E300" />
 <link rel="icon" type="image/svg+xml" href="./icon.svg" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
@@ -24,60 +24,48 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  /* Brand — Cloud Aura (Pantone 2026: Cloud Dancer + Blue Aura) */
-  --brand: #5A8AB5;
-  --brand-light: #A5C5E0;
-  --brand-hover: #4A7AA0;
-  --brand-deep: #2A4561;
-  --brand-darker: #1B2D43;
-  --brand-bg: rgba(165,197,224,0.18);
-  --brand-bg-strong: rgba(90,138,181,0.15);
-  --brand-border: rgba(90,138,181,0.25);
-  /* Back-compat aliases (old code uses these names) */
-  --brand-dark: #2A4561;
-  --brand-soft: rgba(165,197,224,0.18);
-  /* Cloud surfaces (deprecated --ocean-* aliases kept for compat) */
-  --cloud-bg: #F0F4F9;
-  --cloud-card: #FFFFFF;
-  --ocean-bg: #2A4561;
-  --ocean-card: #FFFFFF;
-  /* Active brand contrast (text/icon ON brand-colored bg) */
-  --on-brand: #FFFFFF;
-  /* Light mode tokens (Cloud Dancer base) */
-  --bg: #F0F4F9;
-  --bg-elev: #FFFFFF;
-  --bg-muted: #E8EFF7;
-  --text: #2A4561;
-  --text-muted: #5A8AB5;
-  --text-soft: #8AAACC;
-  --border: #D6E5F2;
-  --border-strong: #2A4561;
+  /* Brand — Neon Energy (electric lime on charcoal) */
+  --brand: #B5E300;
+  --brand-light: #C5EE2D;
+  --brand-hover: #C5EE2D;
+  --brand-deep: #8FB400;
+  --brand-darker: #6F8800;
+  --brand-bg: rgba(181,227,0,0.08);
+  --brand-bg-strong: rgba(181,227,0,0.18);
+  --brand-border: rgba(181,227,0,0.25);
+  /* Back-compat aliases */
+  --brand-dark: #8FB400;
+  --brand-soft: rgba(181,227,0,0.12);
+  /* Surface aliases (old --cloud-*/--ocean-* callers) */
+  --cloud-bg: #1A1A1A;
+  --cloud-card: #0E0E0E;
+  --ocean-bg: #1A1A1A;
+  --ocean-card: #0E0E0E;
+  /* Text on brand-colored bg (always dark for neon green) */
+  --on-brand: #1A1A1A;
+  /* Surface tokens — single dark theme */
+  --bg: #1A1A1A;
+  --bg-elev: #0E0E0E;
+  --bg-muted: #2A2A2A;
+  --text: #FFFFFF;
+  --text-muted: #C0C0C0;
+  --text-soft: #666666;
+  --border: #2A2A2A;
+  --border-strong: #FFFFFF;
   --danger: #e53935;
   --warn: #f59e0b;
   --ok: #22c55e;
-  --shadow-sm: 0 1px 3px rgba(90,138,181,0.08), 0 1px 2px rgba(90,138,181,0.06);
-  --shadow-md: 0 4px 12px rgba(90,138,181,0.10), 0 2px 6px rgba(90,138,181,0.08);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4);
   /* Glass surfaces */
-  --surface-card: #FFFFFF;
-  --surface-card-border: rgba(90,138,181,0.15);
-  --surface-pill: #E8EFF7;
+  --surface-card: #0E0E0E;
+  --surface-card-border: #2A2A2A;
+  --surface-pill: #0E0E0E;
 }
+/* Brand is dark-first; light prefers-color-scheme keeps the dark theme */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1A2433;
-    --bg-elev: #232E40;
-    --bg-muted: #2A3848;
-    --text: #E8EFF7;
-    --text-muted: #A5C5E0;
-    --text-soft: #6E8AA8;
-    --border: rgba(165,197,224,0.12);
-    --border-strong: #E8EFF7;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.5);
-    --shadow-md: 0 4px 14px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35);
-    --surface-card: rgba(255,255,255,0.04);
-    --surface-card-border: rgba(165,197,224,0.12);
-    --surface-pill: rgba(255,255,255,0.04);
-    --on-brand: #1B2D43;
+    /* same as default — explicit no-op for clarity */
   }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -88,10 +76,12 @@ body { min-height: 100vh; }
 
 /* Header */
 .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
-.brand { display: flex; align-items: baseline; gap: 12px; }
-.brand-mark { font-family: 'Inter', sans-serif; font-size: 44px; letter-spacing: -0.02em; line-height: 1; color: var(--text); font-weight: 800; }
+.brand { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.brand-mark { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; gap: 2px; }
+.brand-team { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: var(--brand); letter-spacing: 0.18em; text-transform: uppercase; line-height: 1; }
+.brand-name { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 900; font-style: italic; color: var(--text); letter-spacing: -0.02em; line-height: 1; }
 .brand-accent { color: var(--brand); }
-.brand-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 4px; }
+.brand-tag { font-family: 'Inter', sans-serif; font-size: 10px; color: var(--text-soft); letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; }
 .header-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
 .header-meta .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); margin-right: 6px; animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -100,7 +90,7 @@ body { min-height: 100vh; }
 .tabs { display: flex; gap: 4px; margin-bottom: 28px; padding: 4px; background: var(--surface-pill); border-radius: 99px; overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { padding: 10px 14px; background: transparent; border: none; border-radius: 99px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: background 0.18s, color 0.18s; letter-spacing: 0.05em; text-transform: uppercase; }
-.tab:hover { color: var(--text); background: rgba(90,138,181,0.06); }
+.tab:hover { color: var(--text); background: rgba(181,227,0,0.06); }
 .tab.active { color: var(--on-brand); background: var(--brand); font-weight: 700; }
 .tab.active:hover { background: var(--brand-hover); }
 @media (prefers-color-scheme: dark) {
@@ -116,7 +106,7 @@ body { min-height: 100vh; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 .panel-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
-.panel-title { font-family: 'Inter', sans-serif; font-size: 32px; letter-spacing: 0.02em; line-height: 1; }
+.panel-title { font-family: 'Inter', sans-serif; font-size: 32px; letter-spacing: -0.01em; line-height: 1; font-weight: 900; font-style: italic; }
 .panel-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
 
 /* Card */
@@ -137,7 +127,7 @@ body { min-height: 100vh; }
 
 /* Stat */
 .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
-.stat-value { font-family: 'Inter', sans-serif; font-size: 42px; line-height: 1; margin-top: 8px; letter-spacing: -0.02em; font-weight: 800; color: var(--text); }
+.stat-value { font-family: 'Inter', sans-serif; font-size: 42px; line-height: 1; margin-top: 8px; letter-spacing: -0.02em; font-weight: 900; font-style: italic; color: var(--text); }
 #s-total-dist, #s-best-pace { color: var(--brand); }
 .stat-unit { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); margin-left: 4px; font-weight: 500; letter-spacing: 0; }
 .stat-hint { font-size: 11px; color: var(--text-soft); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
@@ -156,7 +146,7 @@ body { min-height: 100vh; }
 @media (prefers-color-scheme: dark) {
   .input, .select, .textarea { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
 }
-.input:focus, .select:focus, .textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(90,138,181,0.18); }
+.input:focus, .select:focus, .textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(181,227,0,0.18); }
 .textarea { resize: vertical; min-height: 72px; font-family: inherit; }
 
 /* Splits (run form) */
@@ -261,26 +251,19 @@ body { min-height: 100vh; }
 .run-actions { display: flex; gap: 4px; }
 
 /* Chips / badges */
-.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; background: var(--bg-muted); color: var(--text-muted); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(90,138,181,0.06); }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; background: var(--bg-muted); color: var(--text-muted); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(181,227,0,0.06); }
 .chip.brand { background: var(--brand-bg); color: var(--brand-deep); border-color: var(--brand-border); }
 @media (prefers-color-scheme: dark) { .chip.brand { color: var(--brand); } }
-.chip.easy { background: #E0F0E5; color: #2D6A4F; border-color: rgba(45,106,79,0.10); }
-.chip.tempo { background: #FCEED4; color: #8B5C13; border-color: rgba(139,92,19,0.10); }
-.chip.race { background: #FCE7E0; color: #C2552B; border-color: rgba(194,85,43,0.10); }
-.chip.long { background: #E0EBF7; color: #2A4561; border-color: rgba(42,69,97,0.10); }
-.chip.interval { background: #EBE6F7; color: #4F3D85; border-color: rgba(79,61,133,0.10); }
-@media (prefers-color-scheme: dark) {
-  .chip.easy { background: rgba(93,202,165,0.12); color: #5DCAA5; border-color: rgba(93,202,165,0.20); }
-  .chip.tempo { background: rgba(250,199,117,0.12); color: #FAC775; border-color: rgba(250,199,117,0.20); }
-  .chip.race { background: rgba(255,138,90,0.12); color: #FF8B5C; border-color: rgba(255,138,90,0.20); }
-  .chip.long { background: rgba(165,197,224,0.12); color: #A5C5E0; border-color: rgba(165,197,224,0.20); }
-  .chip.interval { background: rgba(180,173,240,0.12); color: #B4ADF0; border-color: rgba(180,173,240,0.20); }
-}
+.chip.easy { background: rgba(93,202,165,0.14); color: #5DCAA5; border-color: rgba(93,202,165,0.22); }
+.chip.tempo { background: rgba(250,199,117,0.14); color: #FAC775; border-color: rgba(250,199,117,0.22); }
+.chip.race { background: rgba(255,138,90,0.14); color: #FF8B5C; border-color: rgba(255,138,90,0.22); }
+.chip.long { background: rgba(125,211,252,0.14); color: #7DD3FC; border-color: rgba(125,211,252,0.22); }
+.chip.interval { background: rgba(180,173,240,0.14); color: #B4ADF0; border-color: rgba(180,173,240,0.22); }
 
 /* Progress */
 .progress-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
 .progress-row + .progress-row { border-top: 1px solid var(--border); }
-.avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; flex-shrink: 0; border: 0.5px solid rgba(90,138,181,0.25); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; flex-shrink: 0; border: 0.5px solid rgba(181,227,0,0.25); }
 .progress-bar { height: 8px; background: var(--bg-muted); border-radius: 999px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
 .progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: right; }
@@ -430,8 +413,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 @media (max-width: 768px) {
   .wrap { padding: 20px 16px 80px; }
   .header { gap: 8px; margin-bottom: 18px; align-items: flex-start; }
-  .brand-mark { font-size: 36px; }
-  .brand-tag { font-size: 10px; padding-bottom: 2px; }
+  .brand-name { font-size: 20px; }
+  .brand-team { font-size: 12px; }
+  .brand-tag { font-size: 9px; }
   .header-meta { font-size: 10px; }
   .panel-title { font-size: 26px; }
   .panel-sub { font-size: 12px; }
@@ -462,8 +446,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 
   /* Header stacks vertically */
   .header { flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 14px; }
-  .brand { gap: 8px; align-items: baseline; }
-  .brand-mark { font-size: 30px; }
+  .brand { gap: 4px; }
+  .brand-name { font-size: 18px; }
+  .brand-team { font-size: 11px; letter-spacing: 0.15em; }
   .header-meta { display: none; }
 
   /* Panel head smaller */
@@ -604,7 +589,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 <div class="wrap">
   <header class="header">
     <div class="brand">
-      <div class="brand-mark">HY<span class="brand-accent">VERSE</span></div>
+      <div class="brand-mark">
+        <span class="brand-team">TEAM</span>
+        <span class="brand-name">HYVERSE</span>
+      </div>
       <div class="brand-tag">Running Crew · Seoul</div>
     </div>
     <div class="header-meta"><span class="dot"></span>TOTAL <span id="header-total" style="color:var(--brand);font-weight:700;">0</span> KM</div>
@@ -1180,7 +1168,7 @@ function setupTypeUI(prefix) {
   updateTypeHelper(prefix);
 }
 
-const AVATAR_COLORS = ['#5A8AB5','#5DCAA5','#FAC775','#FF8B5C','#B4ADF0','#A5C5E0','#7BA3C7','#C4B5FD','#93B5D2','#6FB3D2'];
+const AVATAR_COLORS = ['#B5E300','#9FCC00','#5DCAA5','#FAC775','#FF8B5C','#B4ADF0','#7DD3FC','#C4B5FD','#FFD166','#7BA3C7'];
 const avatarColor = (name) => { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return AVATAR_COLORS[h % AVATAR_COLORS.length]; };
 const avatarHtml = name => `<div class="avatar" style="background:${avatarColor(name)}">${(name||'?').slice(0,1)}</div>`;
 
@@ -1722,12 +1710,12 @@ function openSplitsView(id) {
         datasets: [{
           label: '구간 페이스',
           data: r.splits.map(s => s.paceMin),
-          borderColor: '#5A8AB5',
-          backgroundColor: 'rgba(90,138,181,0.18)',
+          borderColor: '#B5E300',
+          backgroundColor: 'rgba(181,227,0,0.18)',
           tension: 0.25,
           fill: true,
           pointRadius: 4,
-          pointBackgroundColor: '#5A8AB5',
+          pointBackgroundColor: '#B5E300',
         }, {
           label: '평균 페이스',
           data: r.splits.map(() => avgPace),
@@ -1776,7 +1764,7 @@ function renderAnalysis() {
     type: 'line',
     data: {
       labels: sorted.map(r => r.date.slice(5)),
-      datasets: [{ label: '페이스 (분/km)', data: sorted.map(r => r.pace), borderColor: '#5A8AB5', backgroundColor: 'rgba(90,138,181,0.15)', tension: 0.3, fill: true, pointRadius: 5, pointHoverRadius: 7 }]
+      datasets: [{ label: '페이스 (분/km)', data: sorted.map(r => r.pace), borderColor: '#B5E300', backgroundColor: 'rgba(181,227,0,0.15)', tension: 0.3, fill: true, pointRadius: 5, pointHoverRadius: 7 }]
     },
     options: { ...common, scales: { ...common.scales, y: { ...common.scales.y, reverse: true, title: { display: true, text: '분/km (낮을수록 빠름)', color: textColor } } } }
   });
@@ -1798,7 +1786,7 @@ function renderAnalysis() {
   const wData = wLabels.map(k => weatherMap[k].reduce((a,b)=>a+b,0)/weatherMap[k].length);
   charts.weather = new Chart($('#chart-weather'), {
     type: 'bar',
-    data: { labels: wLabels.map(w => `${weatherEmoji(w)} ${w}`), datasets: [{ label: '평균 페이스', data: wData, backgroundColor: '#5A8AB5', borderRadius: 6 }] },
+    data: { labels: wLabels.map(w => `${weatherEmoji(w)} ${w}`), datasets: [{ label: '평균 페이스', data: wData, backgroundColor: '#B5E300', borderRadius: 6 }] },
     options: { ...common, scales: { ...common.scales, y: { ...common.scales.y, reverse: true } } }
   });
 
@@ -1884,7 +1872,7 @@ function renderSplitsAnalysis() {
       data: {
         labels: r.splits.map(s => `${fmtKm(s.to)}km`),
         datasets: [
-          { label: '구간 페이스', data: r.splits.map(s => s.paceMin), borderColor: '#5A8AB5', backgroundColor: 'rgba(90,138,181,0.18)', tension: 0.25, fill: true, pointRadius: 4 },
+          { label: '구간 페이스', data: r.splits.map(s => s.paceMin), borderColor: '#B5E300', backgroundColor: 'rgba(181,227,0,0.18)', tension: 0.25, fill: true, pointRadius: 4 },
           { label: '평균 페이스', data: r.splits.map(() => r.pace), borderColor: 'rgba(148,163,184,0.7)', borderDash: [4,4], pointRadius: 0, fill: false }
         ]
       },
@@ -2252,7 +2240,7 @@ function generateReport(name, month) {
         type: 'line',
         data: {
           labels: myRuns.map(r => r.date.slice(5)),
-          datasets: [{ label: '페이스 (분/km)', data: myRuns.map(r => r.pace), borderColor: '#5A8AB5', backgroundColor: 'rgba(90,138,181,0.2)', tension: 0.3, fill: true, pointRadius: 4 }]
+          datasets: [{ label: '페이스 (분/km)', data: myRuns.map(r => r.pace), borderColor: '#B5E300', backgroundColor: 'rgba(181,227,0,0.2)', tension: 0.3, fill: true, pointRadius: 4 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
@@ -2411,7 +2399,7 @@ function renderCrewReportFor(month) {
       const labels = Object.keys(typeCount).map(typeLabel);
       const data = Object.values(typeCount);
       const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
-      const palette = ['#5A8AB5', '#5DCAA5', '#FAC775', '#FF8B5C', '#B4ADF0'];
+      const palette = ['#B5E300', '#7DD3FC', '#FAC775', '#FF8B5C', '#B4ADF0'];
       crTypeChart = new Chart(cv, {
         type: 'doughnut',
         data: { labels, datasets: [{ data, backgroundColor: palette, borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-elev').trim() || '#fff' }] },
