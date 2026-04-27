@@ -21,6 +21,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --brand: #00C4A0;
@@ -334,6 +335,15 @@ body { min-height: 100vh; }
 .mb-12 { margin-bottom: 12px; }
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
+/* Boot loader (Supabase fetch in progress) */
+#boot-loader { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
+#boot-loader.gone { opacity: 0; pointer-events: none; }
+#boot-loader .bl-brand { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 0.04em; line-height: 1; color: var(--text); }
+#boot-loader .bl-brand span { color: var(--brand); }
+#boot-loader .bl-msg { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); margin-top: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+#boot-loader .bl-spin { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; margin: 14px auto 0; animation: bl-spin 0.8s linear infinite; }
+@keyframes bl-spin { to { transform: rotate(360deg); } }
+
 /* ================================================================
    RESPONSIVE — Mobile-first refinements
    Breakpoints: ≤768px (tablet), ≤480px (mobile)
@@ -505,6 +515,15 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 </style>
 </head>
 <body>
+
+<div id="boot-loader">
+  <div style="text-align:center;">
+    <div class="bl-brand">HY<span>VERSE</span></div>
+    <div class="bl-msg">데이터 불러오는 중</div>
+    <div class="bl-spin"></div>
+  </div>
+</div>
+
 <div class="wrap">
   <header class="header">
     <div class="brand">
@@ -952,59 +971,70 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
    HYVERSE Running Crew Tracker v2
    ============================================================ */
 
-/* ---------- 1. STORAGE LAYER ---------- */
-const KEYS = { runs: 'hv-runs', goals: 'hv-goals', sched: 'hv-sched', races: 'hv-races', members: 'hv-members' };
-const load = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
-const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+/* ---------- 1. SUPABASE CLIENT ---------- */
+const SUPABASE_URL = 'https://wsyffbgvsxnpnqkfrvio.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_j5aMGkZivxgOoZw_l7YxjQ_kYHUysw1';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let runs = load(KEYS.runs);
-let goals = load(KEYS.goals);
-let schedules = load(KEYS.sched);
-let races = load(KEYS.races);
-let members = load(KEYS.members);
+let runs = [];
+let goals = [];
+let schedules = [];
+let races = [];
+let members = [];
 
-/* ---------- 2. SEED DATA ---------- */
-function seedIfEmpty() {
-  const fresh = !runs.length && !goals.length && !schedules.length && !races.length && !members.length;
-  if (!fresh) {
-    // migrate: if members empty but runs exist, derive members from runs
-    if (!members.length && runs.length) {
-      const names = [...new Set(runs.map(r => r.name))];
-      members = names.map((n, i) => ({ id: Date.now() + i, name: n, addedAt: new Date().toISOString().slice(0,10) }));
-      save(KEYS.members, members);
-    }
-    return;
-  }
-  members = [
-    { id: 1, name: '민준', addedAt: '2025-09-01' },
-    { id: 2, name: '서연', addedAt: '2025-09-01' },
-    { id: 3, name: '지호', addedAt: '2025-09-15' },
-  ];
-  runs = [
-    { id: 1, name: '민준', date: '2025-10-12', type: 'long', dist: 18, pace: 5.4, paceStr: '5:24', hr: 155, weather: '맑음', memo: '한강 롱런' },
-    { id: 2, name: '서연', date: '2025-11-08', type: 'tempo', dist: 10, pace: 4.55, paceStr: '4:33', hr: 168, weather: '흐림', memo: '템포 세션' },
-    { id: 3, name: '지호', date: '2025-12-20', type: 'easy', dist: 6, pace: 6.2, paceStr: '6:12', hr: 140, weather: '추움', memo: '회복런' },
-    { id: 4, name: '민준', date: '2026-01-15', type: 'interval', dist: 8, pace: 4.3, paceStr: '4:18', hr: 175, weather: '바람', memo: '400m x 10' },
-    { id: 5, name: '서연', date: '2026-02-22', type: 'race', dist: 10, pace: 4.2, paceStr: '4:12', hr: 180, weather: '맑음', memo: '동아일보 10K' },
-    { id: 6, name: '지호', date: '2026-03-10', type: 'tempo', dist: 12, pace: 5.15, paceStr: '5:09', hr: 162, weather: '맑음', memo: '강변 템포' },
-    { id: 7, name: '민준', date: '2026-04-05', type: 'long', dist: 22, pace: 5.2, paceStr: '5:12', hr: 158, weather: '맑음', memo: '서울 주행' },
-    { id: 8, name: '서연', date: '2026-04-20', type: 'easy', dist: 8, pace: 5.5, paceStr: '5:30', hr: 148, weather: '흐림', memo: '회복' },
-  ];
-  goals = [
-    { id: 1, name: '민준', month: '2026-04', dist: 100, pace: '4:40' },
-    { id: 2, name: '서연', month: '2026-04', dist: 80, pace: '4:30' },
-    { id: 3, name: '지호', month: '2026-04', dist: 60, pace: '5:30' },
-  ];
-  schedules = [
-    { id: 1, name: '한강 일요일런', date: '2026-04-27', time: '07:00', loc: '여의도 한강공원', dist: '15km', attendees: ['민준', '서연'] },
-    { id: 2, name: '남산 야간런', date: '2026-05-02', time: '20:00', loc: '남산 N서울타워', dist: '10km', attendees: ['지호'] },
-  ];
-  races = [
-    { id: 1, name: '서울국제마라톤 2026', date: '2026-05-03', cat: '풀마라톤', loc: '광화문', goal: '3:30:00' },
-    { id: 2, name: 'JTBC 서울마라톤', date: '2026-11-01', cat: '풀마라톤', loc: '상암월드컵경기장', goal: '3:20:00' },
-    { id: 3, name: '춘천 10K', date: '2026-06-15', cat: '10K', loc: '의암호 일원', goal: '40:00' },
-  ];
-  save(KEYS.members, members); save(KEYS.runs, runs); save(KEYS.goals, goals); save(KEYS.sched, schedules); save(KEYS.races, races);
+/* ---------- 2. DATA MAPPING & FETCH ---------- */
+function runFromDb(row) {
+  return {
+    id: row.id, name: row.name, date: row.date, type: row.type,
+    dist: Number(row.dist), pace: Number(row.pace), paceStr: row.pace_str,
+    hr: row.hr, weather: row.weather, memo: row.memo,
+    splits: row.splits || undefined,
+  };
+}
+function runToDb(rec) {
+  return {
+    name: rec.name, date: rec.date, type: rec.type,
+    dist: rec.dist, pace: rec.pace, pace_str: rec.paceStr,
+    hr: rec.hr, weather: rec.weather, memo: rec.memo,
+    splits: rec.splits || null,
+  };
+}
+function memberFromDb(row) {
+  return { id: row.id, name: row.name, addedAt: row.created_at ? row.created_at.slice(0,10) : '' };
+}
+
+function dbErr(prefix, err) {
+  console.error('[DB]', prefix, err);
+  toast(`${prefix}: ${err?.message || '알 수 없는 오류'}`);
+}
+
+async function fetchRuns() {
+  const { data, error } = await sb.from('runs').select('*').order('date', { ascending: false });
+  if (error) throw error;
+  runs = data.map(runFromDb);
+}
+async function fetchGoals() {
+  const { data, error } = await sb.from('goals').select('*');
+  if (error) throw error;
+  goals = data;
+}
+async function fetchSchedules() {
+  const { data, error } = await sb.from('schedules').select('*');
+  if (error) throw error;
+  schedules = data.map(s => ({ ...s, attendees: s.attendees || [] }));
+}
+async function fetchRaces() {
+  const { data, error } = await sb.from('races').select('*');
+  if (error) throw error;
+  races = data;
+}
+async function fetchMembers() {
+  const { data, error } = await sb.from('members').select('*').order('id');
+  if (error) throw error;
+  members = data.map(memberFromDb);
+}
+async function fetchAll() {
+  await Promise.all([fetchRuns(), fetchGoals(), fetchSchedules(), fetchRaces(), fetchMembers()]);
 }
 
 /* ---------- 3. HELPERS ---------- */
@@ -1316,7 +1346,7 @@ $('#f-dist').addEventListener('input', () => {
   }
 });
 
-$('#run-form').addEventListener('submit', e => {
+$('#run-form').addEventListener('submit', async e => {
   e.preventDefault();
   if (!members.length) { toast('먼저 크루원을 등록하세요'); return; }
   const paceStr = $('#f-pace').value.trim();
@@ -1324,7 +1354,6 @@ $('#run-form').addEventListener('submit', e => {
   if (!pace || pace < 2 || pace > 15) { toast('페이스 형식을 확인하세요 (예: 5:00)'); return; }
 
   const rec = {
-    id: Date.now(),
     name: $('#f-name').value,
     date: $('#f-date').value,
     type: $('#f-type').value,
@@ -1333,11 +1362,11 @@ $('#run-form').addEventListener('submit', e => {
     hr: $('#f-hr').value ? parseInt($('#f-hr').value) : null,
     weather: $('#f-weather').value || null,
     memo: $('#f-memo').value.trim(),
+    splits: collectSplits() || null,
   };
-  const splits = collectSplits();
-  if (splits) rec.splits = splits;
-  runs.push(rec);
-  save(KEYS.runs, runs);
+  const { data, error } = await sb.from('runs').insert(runToDb(rec)).select().single();
+  if (error) return dbErr('기록 저장 실패', error);
+  runs.push(runFromDb(data));
   e.target.reset();
   $('#f-date').value = new Date().toISOString().slice(0,10);
   $('#f-splits-area').style.display = 'none';
@@ -1355,8 +1384,9 @@ async function deleteRun(id) {
     confirmText: '삭제', danger: true,
   });
   if (!ok) return;
+  const { error } = await sb.from('runs').delete().eq('id', id);
+  if (error) return dbErr('삭제 실패', error);
   runs = runs.filter(x => x.id !== id);
-  save(KEYS.runs, runs);
   toast('삭제되었습니다');
   renderDashboard();
 }
@@ -1414,11 +1444,12 @@ function openEditRun(id) {
     }
   };
 
-  $('#e-save').onclick = () => {
+  $('#e-save').onclick = async () => {
     const paceStr = $('#e-pace').value.trim();
     const pace = paceToMin(paceStr);
     if (!pace) { toast('페이스 형식 오류'); return; }
-    Object.assign(r, {
+    const splits = collectSplits('e');
+    const patch = {
       name: $('#e-name').value,
       date: $('#e-date').value,
       type: $('#e-type').value,
@@ -1427,11 +1458,13 @@ function openEditRun(id) {
       hr: $('#e-hr').value ? parseInt($('#e-hr').value) : null,
       weather: $('#e-weather').value || null,
       memo: $('#e-memo').value.trim(),
-    });
-    const splits = collectSplits('e');
+      splits: splits || null,
+    };
+    const { error } = await sb.from('runs').update(runToDb(patch)).eq('id', r.id);
+    if (error) return dbErr('수정 실패', error);
+    Object.assign(r, patch);
     if (splits) r.splits = splits;
     else delete r.splits;
-    save(KEYS.runs, runs);
     $('#modal-backdrop').classList.remove('active');
     toast('수정 완료');
     renderDashboard();
@@ -1705,17 +1738,17 @@ $('#rank-filter').addEventListener('click', e => {
 });
 
 /* ---------- 10. GOALS ---------- */
-$('#goal-form').addEventListener('submit', e => {
+$('#goal-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('#g-name').value;
   const month = $('#g-month').value;
   if (!name || !month) { toast('필수값 확인'); return; }
   const dist = $('#g-dist').value ? parseInt($('#g-dist').value) : null;
   const pace = $('#g-pace').value.trim() || null;
-  const existing = goals.find(g => g.name === name && g.month === month);
-  if (existing) { existing.dist = dist; existing.pace = pace; }
-  else goals.push({ id: Date.now(), name, month, dist, pace });
-  save(KEYS.goals, goals);
+  const { data, error } = await sb.from('goals').upsert({ name, month, dist, pace }, { onConflict: 'name,month' }).select().single();
+  if (error) return dbErr('목표 저장 실패', error);
+  const idx = goals.findIndex(g => g.name === name && g.month === month);
+  if (idx >= 0) goals[idx] = data; else goals.push(data);
   e.target.reset();
   toast('목표 저장');
   renderGoals();
@@ -1738,14 +1771,19 @@ function renderGoals() {
 }
 
 /* ---------- 11. SCHEDULE ---------- */
-$('#sched-form').addEventListener('submit', e => {
+$('#sched-form').addEventListener('submit', async e => {
   e.preventDefault();
-  schedules.push({
-    id: Date.now(),
-    name: $('#sc-name').value, date: $('#sc-date').value, time: $('#sc-time').value,
-    loc: $('#sc-loc').value, dist: $('#sc-dist').value, attendees: [],
-  });
-  save(KEYS.sched, schedules);
+  const rec = {
+    name: $('#sc-name').value,
+    date: $('#sc-date').value,
+    time: $('#sc-time').value || null,
+    loc: $('#sc-loc').value || null,
+    dist: $('#sc-dist').value || null,
+    attendees: [],
+  };
+  const { data, error } = await sb.from('schedules').insert(rec).select().single();
+  if (error) return dbErr('일정 추가 실패', error);
+  schedules.push({ ...data, attendees: data.attendees || [] });
   e.target.reset();
   toast('일정 추가');
   renderSchedule();
@@ -1774,24 +1812,32 @@ function renderSchedule() {
       </div>
     </div>`;
   }).join('');
-  el.querySelectorAll('[data-sc]').forEach(b => b.addEventListener('click', () => {
+  el.querySelectorAll('[data-sc]').forEach(b => b.addEventListener('click', async () => {
     const s = schedules.find(x => x.id === +b.dataset.sc);
-    s.attendees = s.attendees || [];
+    if (!s) return;
     const n = b.dataset.mn;
-    s.attendees = s.attendees.includes(n) ? s.attendees.filter(x=>x!==n) : [...s.attendees, n];
-    save(KEYS.sched, schedules); renderSchedule();
+    const cur = s.attendees || [];
+    const newAtt = cur.includes(n) ? cur.filter(x => x !== n) : [...cur, n];
+    const { error } = await sb.from('schedules').update({ attendees: newAtt }).eq('id', s.id);
+    if (error) return dbErr('참석 변경 실패', error);
+    s.attendees = newAtt;
+    renderSchedule();
   }));
 }
 
 /* ---------- 12. RACES ---------- */
-$('#race-form').addEventListener('submit', e => {
+$('#race-form').addEventListener('submit', async e => {
   e.preventDefault();
-  races.push({
-    id: Date.now(),
-    name: $('#r-name').value, date: $('#r-date').value, cat: $('#r-cat').value,
-    loc: $('#r-loc').value, goal: $('#r-goal').value,
-  });
-  save(KEYS.races, races);
+  const rec = {
+    name: $('#r-name').value,
+    date: $('#r-date').value,
+    cat: $('#r-cat').value,
+    loc: $('#r-loc').value || null,
+    goal: $('#r-goal').value || null,
+  };
+  const { data, error } = await sb.from('races').insert(rec).select().single();
+  if (error) return dbErr('대회 등록 실패', error);
+  races.push(data);
   e.target.reset();
   toast('대회 등록');
   renderRaces();
@@ -1818,13 +1864,14 @@ function renderRaces() {
 }
 
 /* ---------- 13. MEMBERS ---------- */
-$('#member-form').addEventListener('submit', e => {
+$('#member-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('#m-name').value.trim();
   if (!name) return;
   if (members.find(m => m.name === name)) { toast('이미 등록된 이름입니다'); return; }
-  members.push({ id: Date.now(), name, addedAt: new Date().toISOString().slice(0,10) });
-  save(KEYS.members, members);
+  const { data, error } = await sb.from('members').insert({ name }).select().single();
+  if (error) return dbErr('크루원 추가 실패', error);
+  members.push(memberFromDb(data));
   e.target.reset();
   toast(`${name}님이 크루에 합류했습니다`);
   renderMembers();
@@ -1836,6 +1883,7 @@ async function deleteMember(id) {
   if (!m) return;
   const myRuns = runs.filter(r => r.name === m.name);
   const myGoals = goals.filter(g => g.name === m.name);
+  const affectedSched = schedules.filter(s => (s.attendees||[]).includes(m.name));
 
   let body = `<strong>${m.name}</strong>님을 크루 명단에서 제외합니다.`;
   if (myRuns.length || myGoals.length) {
@@ -1847,15 +1895,28 @@ async function deleteMember(id) {
   const ok = await confirmModal({ title: '크루원 삭제', body, confirmText: '삭제', danger: true });
   if (!ok) return;
 
+  // Cascade: runs, goals, member; update schedule attendees arrays
+  const ops = [
+    sb.from('runs').delete().eq('name', m.name),
+    sb.from('goals').delete().eq('name', m.name),
+    sb.from('members').delete().eq('id', id),
+    ...affectedSched.map(s =>
+      sb.from('schedules').update({ attendees: s.attendees.filter(a => a !== m.name) }).eq('id', s.id)
+    ),
+  ];
+  const results = await Promise.all(ops);
+  const firstErr = results.find(r => r.error);
+  if (firstErr) return dbErr('삭제 실패 (일부 작업)', firstErr.error);
+
   members = members.filter(x => x.id !== id);
   runs = runs.filter(r => r.name !== m.name);
   goals = goals.filter(g => g.name !== m.name);
   schedules.forEach(s => { s.attendees = (s.attendees||[]).filter(a => a !== m.name); });
 
-  save(KEYS.members, members); save(KEYS.runs, runs); save(KEYS.goals, goals); save(KEYS.sched, schedules);
   toast(`${m.name}님이 삭제되었습니다`);
   renderMembers();
   refreshMemberSelects();
+  renderDashboard();
 }
 
 function renderMembers() {
@@ -2165,20 +2226,60 @@ function renderCrewReportFor(month) {
 $('#cr-month').addEventListener('change', () => renderCrewReportFor($('#cr-month').value));
 
 /* ---------- 15. INIT ---------- */
-function init() {
-  seedIfEmpty();
+function setupRealtime() {
+  sb.channel('runs-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'runs' }, async () => {
+      try {
+        await fetchRuns();
+        const active = document.querySelector('.tab.active')?.dataset.tab;
+        if (active === 'analysis') renderAnalysis();
+        else if (active === 'rank') renderRank();
+        else if (active === 'goals') renderGoals();
+        else if (active === 'crewreport') renderCrewReport();
+        else renderDashboard();
+      } catch (err) { console.warn('[Realtime] refetch failed:', err); }
+    })
+    .subscribe();
+}
+
+function hideBootLoader() {
+  const bl = document.getElementById('boot-loader');
+  if (!bl) return;
+  bl.classList.add('gone');
+  setTimeout(() => bl.remove(), 350);
+}
+
+async function init() {
   const today = new Date().toISOString().slice(0,10);
+  $('#today-label').textContent = today;
   $('#f-date').value = today;
   $('#g-month').value = today.slice(0,7);
   $('#rep-month').value = today.slice(0,7);
-  $('#today-label').textContent = today;
-  refreshMemberSelects();
-  renderDashboard();
 
-  // Close modal on backdrop
+  // Close modal on backdrop (attach early)
   $('#modal-backdrop').addEventListener('click', e => {
     if (e.target.id === 'modal-backdrop') $('#modal-backdrop').classList.remove('active');
   });
+
+  try {
+    await fetchAll();
+  } catch (err) {
+    console.error('[Init] fetchAll failed:', err);
+    const bl = document.getElementById('boot-loader');
+    if (bl) {
+      bl.innerHTML = `<div style="text-align:center; padding:24px; max-width:320px;">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:36px; color:#dc2626; margin-bottom:8px;">CONNECTION ERROR</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); margin-bottom:16px; word-break:break-word;">${err?.message || '데이터를 불러올 수 없습니다'}</div>
+        <button onclick="location.reload()" style="padding:10px 20px; background:var(--text); color:var(--bg); border:none; border-radius:8px; cursor:pointer; font-weight:600;">새로고침</button>
+      </div>`;
+    }
+    return;
+  }
+
+  refreshMemberSelects();
+  renderDashboard();
+  setupRealtime();
+  hideBootLoader();
 }
 init();
 </script>
