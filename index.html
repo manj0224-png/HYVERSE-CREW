@@ -24,43 +24,50 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
+  /* Brand — sky blue spectrum */
   --brand: #7DD3FC;
+  --brand-light: #A5D7FF;
   --brand-hover: #38BDF8;
-  --brand-deep: #0EA5E9;
+  --brand-deep: #0284C7;
+  --brand-darker: #0369A1;
   --brand-bg: rgba(125,211,252,0.08);
   --brand-bg-strong: rgba(125,211,252,0.18);
   --brand-border: rgba(125,211,252,0.25);
   /* Back-compat aliases (old code uses these names) */
-  --brand-dark: #0EA5E9;
+  --brand-dark: #0284C7;
   --brand-soft: rgba(125,211,252,0.12);
-  --bg: #f7f7f4;
-  --bg-elev: #ffffff;
-  --bg-muted: #eeece5;
-  --text: #1a1a1a;
-  --text-muted: #6b6b6b;
-  --text-soft: #8f8f8f;
-  --border: #e5e3db;
-  --border-strong: #1a1a1a;
+  /* Ocean depth (dark mode primary surfaces) */
+  --ocean-bg: #0A1F33;
+  --ocean-card: #0F2942;
+  /* Light mode (sky-tinted) */
+  --bg: #E8F4FD;
+  --bg-elev: #FFFFFF;
+  --bg-muted: #DCEEFB;
+  --text: #0C4A6E;
+  --text-muted: #4A7AA0;
+  --text-soft: #7BA0C0;
+  --border: #D4EAF8;
+  --border-strong: #0C4A6E;
   --danger: #e53935;
   --warn: #f59e0b;
   --ok: #22c55e;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 2px rgba(12,74,110,0.05), 0 1px 3px rgba(125,211,252,0.10);
+  --shadow-md: 0 4px 12px rgba(12,74,110,0.08), 0 2px 6px rgba(125,211,252,0.10);
   /* Glass surfaces (subtle in light, strong in dark) */
-  --surface-card: #ffffff;
+  --surface-card: #FFFFFF;
   --surface-card-border: var(--border);
-  --surface-pill: rgba(0,0,0,0.04);
+  --surface-pill: rgba(125,211,252,0.10);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0a0f17;
-    --bg-elev: #11171f;
-    --bg-muted: #1a212b;
-    --text: #f1f5f9;
-    --text-muted: #94a3b8;
-    --text-soft: #64748b;
+    --bg: #0A1F33;
+    --bg-elev: #0F2942;
+    --bg-muted: #14334F;
+    --text: #F1F5F9;
+    --text-muted: #94A3B8;
+    --text-soft: #64748B;
     --border: rgba(255,255,255,0.08);
-    --border-strong: #f1f5f9;
+    --border-strong: #F1F5F9;
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.5);
     --shadow-md: 0 4px 14px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35);
     --surface-card: linear-gradient(135deg, rgba(125,211,252,0.04) 0%, rgba(255,255,255,0.02) 100%);
@@ -87,12 +94,12 @@ body { min-height: 100vh; }
 /* Tabs (pill style) */
 .tabs { display: flex; gap: 4px; margin-bottom: 28px; padding: 4px; background: var(--surface-pill); border-radius: 99px; overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
-.tab { padding: 10px 16px; background: transparent; border: none; border-radius: 99px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: background 0.18s, color 0.18s; letter-spacing: 0.01em; }
+.tab { padding: 10px 14px; background: transparent; border: none; border-radius: 99px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: background 0.18s, color 0.18s; letter-spacing: 0.05em; text-transform: uppercase; }
 .tab:hover { color: var(--text); background: rgba(125,211,252,0.06); }
-.tab.active { color: #0a0f17; background: var(--brand); font-weight: 600; }
-.tab.active:hover { background: var(--brand-hover); }
+.tab.active { color: var(--ocean-bg); background: var(--brand); font-weight: 700; }
+.tab.active:hover { background: var(--brand-light); }
 .tab-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-soft); margin-right: 6px; }
-.tab.active .tab-num { color: rgba(10,15,23,0.55); }
+.tab.active .tab-num { color: rgba(10,31,51,0.55); }
 
 /* Panels */
 .panel { display: none; animation: fadeIn 0.3s ease; }
@@ -209,8 +216,9 @@ body { min-height: 100vh; }
 }
 .btn:hover { opacity: 0.85; }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--brand); color: #0a0f17; border-color: var(--brand); font-weight: 700; }
-.btn-primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); opacity: 1; }
+.btn-primary { background: var(--brand); color: var(--ocean-bg); border-color: var(--brand); font-weight: 700; }
+.btn-primary:hover { background: var(--brand-light); border-color: var(--brand-light); opacity: 1; }
+.btn-primary:active { transform: scale(0.98); }
 .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
 .btn-ghost:hover { background: var(--brand-bg); border-color: var(--brand-border); color: var(--brand-deep); }
 @media (prefers-color-scheme: dark) {
@@ -244,26 +252,26 @@ body { min-height: 100vh; }
 .run-actions { display: flex; gap: 4px; }
 
 /* Chips / badges */
-.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; font-size: 10px; font-weight: 600; background: var(--bg-muted); color: var(--text-muted); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; }
-.chip.brand { background: var(--brand-bg); color: var(--brand-deep); }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; background: var(--bg-muted); color: var(--text-muted); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(125,211,252,0.06); }
+.chip.brand { background: var(--brand-bg); color: var(--brand-deep); border-color: var(--brand-border); }
 @media (prefers-color-scheme: dark) { .chip.brand { color: var(--brand); } }
-.chip.easy { background: rgba(29,158,117,0.12); color: #1d9e75; }
-.chip.tempo { background: rgba(239,159,39,0.12); color: #d97706; }
-.chip.race { background: rgba(216,90,48,0.15); color: #d85a30; }
-.chip.long { background: rgba(125,211,252,0.12); color: #0EA5E9; }
-.chip.interval { background: rgba(167,139,250,0.14); color: #7c3aed; }
+.chip.easy { background: rgba(29,158,117,0.12); color: #1d9e75; border-color: rgba(29,158,117,0.18); }
+.chip.tempo { background: rgba(239,159,39,0.12); color: #d97706; border-color: rgba(239,159,39,0.20); }
+.chip.race { background: rgba(216,90,48,0.15); color: #d85a30; border-color: rgba(216,90,48,0.22); }
+.chip.long { background: rgba(56,189,248,0.12); color: #0284C7; border-color: rgba(56,189,248,0.20); }
+.chip.interval { background: rgba(127,119,221,0.12); color: #6258c4; border-color: rgba(127,119,221,0.20); }
 @media (prefers-color-scheme: dark) {
   .chip.easy { color: #5DCAA5; }
   .chip.tempo { color: #FAC775; }
   .chip.race { color: #FF8B5C; }
   .chip.long { color: #7DD3FC; }
-  .chip.interval { color: #C4B5FD; }
+  .chip.interval { color: #B4ADF0; }
 }
 
 /* Progress */
 .progress-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
 .progress-row + .progress-row { border-top: 1px solid var(--border); }
-.avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; flex-shrink: 0; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; flex-shrink: 0; border: 0.5px solid rgba(125,211,252,0.25); }
 .progress-bar { height: 8px; background: var(--bg-muted); border-radius: 999px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
 .progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: right; }
@@ -588,9 +596,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
   <header class="header">
     <div class="brand">
       <div class="brand-mark">HY<span class="brand-accent">VERSE</span></div>
-      <div class="brand-tag">Running Crew · v2.0</div>
+      <div class="brand-tag">Running Crew · Seoul</div>
     </div>
-    <div class="header-meta"><span class="dot"></span><span id="today-label">LIVE</span></div>
+    <div class="header-meta"><span class="dot"></span>TOTAL <span id="header-total" style="color:var(--brand);font-weight:700;">0</span> KM</div>
   </header>
 
   <nav class="tabs" id="tabs">
@@ -1163,7 +1171,7 @@ function setupTypeUI(prefix) {
   updateTypeHelper(prefix);
 }
 
-const AVATAR_COLORS = ['#7DD3FC','#f59e0b','#6366f1','#ec4899','#dc2626','#16a34a','#0ea5e9','#8b5cf6','#d97706','#14b8a6'];
+const AVATAR_COLORS = ['#7DD3FC','#5DCAA5','#FAC775','#FF8B5C','#B4ADF0','#A5D7FF','#6FB3D2','#C4B5FD','#93C5FD','#38BDF8'];
 const avatarColor = (name) => { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return AVATAR_COLORS[h % AVATAR_COLORS.length]; };
 const avatarHtml = name => `<div class="avatar" style="background:${avatarColor(name)}">${(name||'?').slice(0,1)}</div>`;
 
@@ -1386,6 +1394,7 @@ function renderUpcoming() {
 
 function renderDashboard() {
   renderUpcoming();
+  updateHeaderTotal();
   const total = runs.reduce((a,r) => a + r.dist, 0);
   $('#s-total-dist').textContent = total.toFixed(1);
   $('#s-total-runs').textContent = runs.length;
@@ -2418,6 +2427,7 @@ function setupRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'runs' }, async () => {
       try {
         await fetchRuns();
+        updateHeaderTotal();
         const active = document.querySelector('.tab.active')?.dataset.tab;
         if (active === 'analysis') renderAnalysis();
         else if (active === 'rank') renderRank();
@@ -2436,9 +2446,14 @@ function hideBootLoader() {
   setTimeout(() => bl.remove(), 350);
 }
 
+function updateHeaderTotal() {
+  const t = runs.reduce((a, r) => a + (r.dist || 0), 0);
+  const el = document.getElementById('header-total');
+  if (el) el.textContent = t.toFixed(1);
+}
+
 async function init() {
   const today = new Date().toISOString().slice(0,10);
-  $('#today-label').textContent = today;
   $('#f-date').value = today;
   $('#g-month').value = today.slice(0,7);
   $('#rep-month').value = today.slice(0,7);
@@ -2465,6 +2480,7 @@ async function init() {
 
   refreshMemberSelects();
   setupTypeUI('f');
+  updateHeaderTotal();
   renderDashboard();
   setupRealtime();
   hideBootLoader();
