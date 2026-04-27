@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HYVERSE Running Crew Tracker</title>
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#00C4A0" />
+<link rel="icon" type="image/svg+xml" href="./icon.svg" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="HYVERSE" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --brand: #00C4A0;
+  --brand-dark: #009f82;
+  --brand-soft: rgba(0,196,160,0.12);
+  --bg: #f7f7f4;
+  --bg-elev: #ffffff;
+  --bg-muted: #eeece5;
+  --text: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --text-soft: #8f8f8f;
+  --border: #e5e3db;
+  --border-strong: #1a1a1a;
+  --danger: #e53935;
+  --warn: #f59e0b;
+  --ok: #22c55e;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0e;
+    --bg-elev: #1a1a18;
+    --bg-muted: #24231f;
+    --text: #f4f2ec;
+    --text-muted: #a8a59b;
+    --text-soft: #6f6d66;
+    --border: #2e2c27;
+    --border-strong: #f4f2ec;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.5);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35);
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { min-height: 100vh; }
+
+.wrap { max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
+
+/* Header */
+.header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand-mark { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 0.02em; line-height: 1; color: var(--text); }
+.brand-accent { color: var(--brand); }
+.brand-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 4px; }
+.header-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.header-meta .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); margin-right: 6px; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Tabs */
+.tabs { display: flex; gap: 2px; margin-bottom: 28px; border-bottom: 2px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 12px 18px; background: transparent; border: none; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 13px; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color 0.15s, border-color 0.15s; letter-spacing: 0.01em; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); border-bottom-color: var(--brand); }
+.tab-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-soft); margin-right: 6px; }
+
+/* Panels */
+.panel { display: none; animation: fadeIn 0.3s ease; }
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.panel-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+.panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 0.02em; line-height: 1; }
+.panel-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+/* Card */
+.card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow-sm); }
+.card-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.02em; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card-title-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-soft); font-weight: 400; letter-spacing: 0.08em; }
+
+/* Grid */
+.grid { display: grid; gap: 16px; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 900px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .grid-3 { grid-template-columns: 1fr; } .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+
+/* Stat */
+.stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; margin-top: 6px; letter-spacing: 0.02em; }
+.stat-unit { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-muted); margin-left: 4px; font-weight: 500; }
+.stat-hint { font-size: 11px; color: var(--text-soft); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+
+/* Form */
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.input, .select, .textarea {
+  padding: 10px 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus, .select:focus, .textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.textarea { resize: vertical; min-height: 72px; font-family: inherit; }
+
+/* Splits (run form) */
+.splits-area { margin-top: 10px; padding: 12px; background: var(--bg-muted); border-radius: 8px; }
+.splits-empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px 0; }
+.split-row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; padding: 6px 0; }
+.split-row + .split-row { border-top: 1px solid var(--border); }
+.split-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+.split-row .input { padding: 6px 10px; font-size: 13px; }
+
+/* Splits detail (dashboard modal) */
+.chip.splits { cursor: pointer; background: var(--brand-soft); color: var(--brand-dark); transition: filter 0.15s; }
+.chip.splits:hover { filter: brightness(1.1); }
+@media (prefers-color-scheme: dark) { .chip.splits { color: var(--brand); } }
+.split-detail-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center; padding: 8px 0; font-size: 13px; }
+.split-detail-row + .split-detail-row { border-top: 1px solid var(--border); }
+.split-pace { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text); }
+.split-delta { font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg-muted); color: var(--text-muted); min-width: 56px; text-align: center; }
+.split-delta.good { background: rgba(34,197,94,0.15); color: #16a34a; }
+.split-delta.bad { background: rgba(229,57,53,0.12); color: #dc2626; }
+
+/* Upcoming events (dashboard) */
+.upcoming-list { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; }
+.upcoming-card { flex: 0 0 220px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); cursor: pointer; transition: transform 0.1s, border-color 0.15s, box-shadow 0.15s; display: flex; flex-direction: column; gap: 8px; scroll-snap-align: start; }
+.upcoming-card:hover { transform: translateY(-2px); border-color: var(--brand); box-shadow: var(--shadow-sm); }
+.upcoming-card .dday { font-size: 22px; padding: 5px 12px; min-width: 56px; align-self: flex-start; }
+.upcoming-name { font-weight: 600; font-size: 14px; color: var(--text); line-height: 1.3; }
+.upcoming-meta { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.upcoming-loc { font-size: 11px; color: var(--text-soft); }
+.upcoming-empty { padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* Dashboard filter */
+.dash-filter-toggle { padding: 5px 12px; font-size: 11px; border-radius: 999px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.dash-filter-toggle:hover { color: var(--text); border-color: var(--text-muted); }
+.dash-filter-toggle.active { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-dark); }
+@media (prefers-color-scheme: dark) { .dash-filter-toggle.active { color: var(--brand); } }
+.dash-filter-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); display: none; }
+.dash-filter-toggle.active .dot { display: inline-block; }
+.dash-filter-area { margin: 10px 0 12px; padding: 12px; background: var(--bg-muted); border-radius: 8px; }
+.dash-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.dash-filter-grid .field { gap: 4px; }
+.dash-filter-grid .field label { font-size: 9px; }
+.dash-filter-grid .input, .dash-filter-grid .select { padding: 6px 10px; font-size: 12px; }
+.dash-filter-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.dash-filter-result { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+/* Crew report */
+.cr-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+.cr-table th { text-align: left; padding: 8px 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.cr-table td { padding: 10px 6px; border-bottom: 1px solid var(--border); }
+.cr-table tbody tr:last-child td { border-bottom: none; }
+.cr-table td.mono { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.cr-rank-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; }
+.cr-rank-row + .cr-rank-row { border-top: 1px solid var(--border); }
+.cr-rank-num { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--text-soft); text-align: center; }
+.cr-rank-name { font-weight: 600; font-size: 13px; }
+.cr-rank-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.cr-rank-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: var(--brand-dark); }
+@media (prefers-color-scheme: dark) { .cr-rank-val { color: var(--brand); } }
+
+/* Buttons */
+.btn {
+  padding: 10px 16px; border: 1px solid var(--border-strong); background: var(--text); color: var(--bg);
+  border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 13px;
+  cursor: pointer; transition: transform 0.08s, opacity 0.15s; letter-spacing: 0.01em;
+}
+.btn:hover { opacity: 0.85; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.btn-primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); opacity: 1; }
+.btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg-muted); }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; }
+.btn-icon { padding: 6px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.btn-icon:hover { color: var(--text); background: var(--bg-muted); }
+.btn-icon.danger:hover { color: var(--danger); border-color: var(--danger); background: transparent; }
+
+/* Run list */
+.run-list { display: flex; flex-direction: column; gap: 10px; }
+.run-row {
+  display: grid; grid-template-columns: 56px 1fr auto auto; gap: 14px; align-items: center;
+  padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  transition: border-color 0.15s;
+}
+.run-row:hover { border-color: var(--brand); }
+.run-date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.3; }
+.run-date .md { font-size: 16px; color: var(--text); font-weight: 500; display: block; }
+.run-main { min-width: 0; }
+.run-line1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.run-name { font-weight: 600; font-size: 14px; }
+.run-meta { font-size: 12px; color: var(--text-muted); }
+.run-stats { display: flex; gap: 14px; align-items: center; }
+.run-stat { text-align: right; }
+.run-stat .v { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; }
+.run-stat .u { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.run-actions { display: flex; gap: 4px; }
+
+/* Chips / badges */
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; background: var(--bg-muted); color: var(--text-muted); white-space: nowrap; }
+.chip.brand { background: var(--brand-soft); color: var(--brand-dark); }
+@media (prefers-color-scheme: dark) { .chip.brand { color: var(--brand); } }
+.chip.easy { background: rgba(34,197,94,0.12); color: #16a34a; }
+.chip.tempo { background: rgba(245,158,11,0.15); color: #d97706; }
+.chip.race { background: rgba(229,57,53,0.12); color: #dc2626; }
+.chip.long { background: rgba(99,102,241,0.14); color: #4f46e5; }
+.chip.interval { background: rgba(236,72,153,0.14); color: #db2777; }
+
+/* Progress */
+.progress-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
+.progress-row + .progress-row { border-top: 1px solid var(--border); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'DM Sans', sans-serif; flex-shrink: 0; }
+.progress-bar { height: 8px; background: var(--bg-muted); border-radius: 999px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+.progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: right; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-chip { padding: 6px 12px; border-radius: 999px; background: var(--bg-elev); border: 1px solid var(--border); font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.filter-chip:hover { color: var(--text); }
+.filter-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* Heart rate zone */
+.zones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+.zone { padding: 8px; text-align: center; border-radius: 6px; font-size: 11px; }
+.zone .zn { font-family: 'Bebas Neue', sans-serif; font-size: 16px; display: block; line-height: 1; }
+.z1 { background: rgba(148,163,184,0.15); color: #64748b; }
+.z2 { background: rgba(34,197,94,0.15); color: #16a34a; }
+.z3 { background: rgba(245,158,11,0.18); color: #d97706; }
+.z4 { background: rgba(249,115,22,0.18); color: #ea580c; }
+.z5 { background: rgba(229,57,53,0.18); color: #dc2626; }
+
+/* Empty state */
+.empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 32px; margin-bottom: 8px; }
+.empty-title { font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.empty-sub { font-size: 13px; }
+
+/* Schedule/Race card */
+.sched-card, .race-card { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.sched-card + .sched-card, .race-card + .race-card { margin-top: 10px; }
+.dday { font-family: 'Bebas Neue', sans-serif; font-size: 28px; line-height: 1; padding: 6px 10px; border-radius: 8px; background: var(--bg-muted); color: var(--text); min-width: 56px; text-align: center; }
+.dday.soon { background: var(--danger); color: #fff; }
+.dday.far { background: rgba(34,197,94,0.18); color: #16a34a; }
+.dday.done { background: var(--bg-muted); color: var(--text-soft); }
+.sched-info .t { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.sched-info .m { font-size: 12px; color: var(--text-muted); }
+.attendee-list { display: flex; gap: -4px; margin-top: 6px; }
+.attendee-pill { padding: 2px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-dark); font-size: 11px; margin-right: 4px; }
+@media (prefers-color-scheme: dark) { .attendee-pill { color: var(--brand); } }
+
+/* Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 99; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-backdrop.active { display: flex; animation: fadeIn 0.2s; }
+.modal { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-md); }
+.modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 0.02em; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* Member list */
+.member-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 14px; align-items: center; padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+.member-row + .member-row { margin-top: 8px; }
+.member-name { font-weight: 600; font-size: 14px; }
+.member-stats { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 1000; box-shadow: var(--shadow-md); }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* Rank list */
+.rank-row { display: grid; grid-template-columns: 32px auto 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
+.rank-row + .rank-row { border-top: 1px solid var(--border); }
+.rank-num { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--text-soft); text-align: center; }
+.rank-row:nth-child(1) .rank-num { color: var(--brand); }
+.rank-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; }
+.rank-val-u { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Chart container */
+.chart-wrap { position: relative; height: 260px; }
+
+/* Report view */
+.report-view { background: #fff; color: #111; padding: 32px; border-radius: 12px; font-family: 'DM Sans', sans-serif; }
+@media (prefers-color-scheme: dark) { .report-view { background: #f8f8f4; } }
+.report-header { border-bottom: 3px solid #111; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+.report-brand { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; }
+.report-brand .a { color: var(--brand); }
+.report-period { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #666; text-align: right; }
+.report-period .big { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #111; display: block; margin-top: 4px; }
+.report-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.report-stat { padding: 14px; background: #f4f4ef; border-radius: 8px; }
+.report-stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
+.report-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 34px; line-height: 1; margin-top: 4px; color: #111; }
+.report-section { margin-bottom: 20px; }
+.report-section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; margin-bottom: 10px; letter-spacing: 0.02em; color: #111; }
+.report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.report-table th { text-align: left; padding: 8px; background: #f4f4ef; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; }
+.report-table td { padding: 8px; border-bottom: 1px solid #e8e6de; color: #111; }
+.report-footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid #e8e6de; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #888; text-align: center; letter-spacing: 0.08em; }
+.report-chart-wrap { height: 200px; background: #fafaf6; border-radius: 8px; padding: 12px; }
+
+@media print {
+  body * { visibility: hidden; }
+  .report-view, .report-view * { visibility: visible; }
+  .report-view { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+}
+
+/* Utility */
+.row-flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.muted { color: var(--text-muted); }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; }
+.mb-12 { margin-bottom: 12px; }
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ================================================================
+   RESPONSIVE — Mobile-first refinements
+   Breakpoints: ≤768px (tablet), ≤480px (mobile)
+   ================================================================ */
+
+/* === Tablet & narrow desktop (≤768px) === */
+@media (max-width: 768px) {
+  .wrap { padding: 20px 16px 80px; }
+  .header { gap: 8px; margin-bottom: 18px; align-items: flex-start; }
+  .brand-mark { font-size: 36px; }
+  .brand-tag { font-size: 10px; padding-bottom: 2px; }
+  .header-meta { font-size: 10px; }
+  .panel-title { font-size: 26px; }
+  .panel-sub { font-size: 12px; }
+  .panel-head { margin-bottom: 18px; }
+  .tabs { margin-bottom: 20px; }
+  .tab { padding: 14px 14px; font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
+  .card { padding: 16px; }
+  .card-title { font-size: 14px; }
+  .stat-value { font-size: 36px; }
+  .form-grid { grid-template-columns: 1fr; gap: 12px; }
+  .input, .select, .textarea { padding: 11px 12px; font-size: 16px; min-height: 44px; }
+  .btn { padding: 11px 16px; min-height: 44px; }
+  .btn-sm { padding: 8px 12px; min-height: 36px; }
+  .btn-icon { width: 38px; height: 38px; padding: 8px; }
+  .chart-wrap { height: 220px; }
+  .modal-backdrop { padding: 12px; }
+  .modal { padding: 20px 16px 24px; max-height: 92vh; border-radius: 14px; }
+  .modal-title { font-size: 22px; }
+  .filter-chip { padding: 9px 14px; font-size: 12px; min-height: 40px; }
+  .row-flex { gap: 8px; }
+  .dash-filter-toggle { padding: 8px 14px; min-height: 36px; }
+}
+
+/* === Mobile (≤480px) === */
+@media (max-width: 480px) {
+  body { overflow-x: hidden; }
+  .wrap { padding: 14px 12px 80px; }
+
+  /* Header stacks vertically */
+  .header { flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 14px; }
+  .brand { gap: 8px; align-items: baseline; }
+  .brand-mark { font-size: 30px; }
+  .header-meta { display: none; }
+
+  /* Panel head smaller */
+  .panel-title { font-size: 22px; }
+  .panel-sub { font-size: 11px; }
+  .panel-head { margin-bottom: 14px; }
+
+  /* Tabs - hide tab numbers, retain horizontal scroll */
+  .tab { padding: 12px 12px; font-size: 12px; }
+  .tab-num { display: none; }
+
+  /* Cards compact */
+  .card { padding: 14px; border-radius: 10px; }
+  .card-title { font-size: 13px; margin-bottom: 8px; }
+  .grid { gap: 10px; }
+  .mb-12 { margin-bottom: 10px; }
+
+  /* Stats compact */
+  .stat-value { font-size: 28px; }
+  .stat-label { font-size: 9px; }
+  .stat-hint { font-size: 10px; }
+  .stat-unit { font-size: 11px; }
+
+  /* Form inputs - 16px font prevents iOS zoom */
+  .input, .select, .textarea { font-size: 16px; padding: 12px 12px; }
+
+  /* Run row stacks actions below */
+  .run-row {
+    grid-template-columns: 44px 1fr auto;
+    grid-template-areas:
+      "date main stats"
+      "actions actions actions";
+    gap: 10px;
+    padding: 12px;
+  }
+  .run-date { grid-area: date; }
+  .run-main { grid-area: main; }
+  .run-stats { grid-area: stats; gap: 10px; }
+  .run-actions { grid-area: actions; justify-content: flex-end; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .run-stat .v { font-size: 20px; }
+  .run-name { font-size: 14px; }
+
+  /* Sched/race cards: stack actions row below */
+  .sched-card, .race-card {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "dday info"
+      "actions actions";
+    gap: 10px;
+    padding: 12px;
+  }
+  .sched-card > div:nth-child(1), .race-card > div:nth-child(1) { grid-area: dday; }
+  .sched-card > div:nth-child(2), .race-card > div:nth-child(2) { grid-area: info; }
+  .sched-card > div:nth-child(3), .race-card > div:nth-child(3) {
+    grid-area: actions;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: stretch !important;
+    justify-content: flex-start;
+    gap: 6px !important;
+    width: 100%;
+  }
+  .sched-card > div:nth-child(3) .btn-sm { flex: 1 1 80px; justify-content: center; min-width: 0; }
+  .race-card > div:nth-child(3):empty { display: none; }
+  .dday { font-size: 22px; min-width: 50px; padding: 5px 8px; }
+  .sched-info .t, .sched-info .m { word-break: break-word; }
+
+  /* Modal nearly fullscreen with 12px margin */
+  .modal-backdrop { padding: 12px; align-items: center; }
+  .modal { padding: 18px 14px 22px; max-height: calc(100vh - 24px); width: calc(100% - 0px); border-radius: 14px; }
+  .modal-title { font-size: 20px; }
+  .modal-actions { flex-direction: column-reverse; gap: 6px; }
+  .modal-actions .btn { width: 100%; }
+
+  /* Dashboard filter: 1 col, foot stacks */
+  .dash-filter-grid { grid-template-columns: 1fr; }
+  .dash-filter-foot { flex-direction: column; align-items: stretch; gap: 8px; }
+  .dash-filter-foot .btn { width: 100%; }
+
+  /* Charts smaller height */
+  .chart-wrap { height: 200px; }
+
+  /* Crew report */
+  .cr-rank-row { grid-template-columns: 28px 1fr auto; padding: 12px 0; gap: 10px; }
+  .cr-rank-num { font-size: 22px; }
+  .cr-rank-name { font-size: 14px; }
+  .cr-rank-val { font-size: 18px; }
+  .cr-table { font-size: 12px; }
+  .cr-table th, .cr-table td { padding: 8px 4px; }
+
+  /* Splits compact */
+  .split-row { grid-template-columns: 90px 1fr; gap: 8px; }
+  .split-detail-row { grid-template-columns: 84px 1fr auto; gap: 8px; font-size: 12px; }
+  .split-delta { min-width: 48px; font-size: 11px; padding: 2px 6px; }
+  .splits-area { padding: 10px; }
+
+  /* Member row - hide empty placeholder col */
+  .member-row { grid-template-columns: auto 1fr auto; gap: 10px; padding: 10px 12px; }
+  .member-row > :nth-child(3):empty { display: none; }
+
+  /* Upcoming cards smaller, still scrollable */
+  .upcoming-card { flex: 0 0 200px; padding: 12px; gap: 6px; }
+  .upcoming-card .dday { font-size: 18px; padding: 4px 10px; }
+  .upcoming-name { font-size: 13px; }
+
+  /* Filter chips touch target */
+  .filter-chip { padding: 10px 14px; font-size: 12px; min-height: 44px; }
+  .filter-bar { gap: 6px; }
+
+  /* Goal progress / rank rows compact */
+  .progress-row { grid-template-columns: 70px 1fr 38px; gap: 10px; padding: 10px 0; }
+  .rank-row { grid-template-columns: 24px auto 1fr auto; gap: 10px; padding: 10px 0; }
+  .rank-num { font-size: 22px; }
+
+  /* Empty state */
+  .empty { padding: 28px 12px; }
+  .empty-icon { font-size: 28px; }
+
+  /* Btn-icon larger touch */
+  .btn-icon { width: 40px; height: 40px; }
+
+  /* Toast adjusts to mobile width */
+  .toast { left: 12px; right: 12px; transform: translateY(100px); width: auto; max-width: none; }
+  .toast.show { transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">HY<span class="brand-accent">VERSE</span></div>
+      <div class="brand-tag">Running Crew · v2.0</div>
+    </div>
+    <div class="header-meta"><span class="dot"></span><span id="today-label">LIVE</span></div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="dashboard"><span class="tab-num">01</span>대시보드</button>
+    <button class="tab" data-tab="add"><span class="tab-num">02</span>기록 추가</button>
+    <button class="tab" data-tab="analysis"><span class="tab-num">03</span>페이스 분석</button>
+    <button class="tab" data-tab="rank"><span class="tab-num">04</span>크루 랭킹</button>
+    <button class="tab" data-tab="goals"><span class="tab-num">05</span>목표 관리</button>
+    <button class="tab" data-tab="schedule"><span class="tab-num">06</span>정기런</button>
+    <button class="tab" data-tab="races"><span class="tab-num">07</span>대회 캘린더</button>
+    <button class="tab" data-tab="members"><span class="tab-num">08</span>크루원 관리</button>
+    <button class="tab" data-tab="report"><span class="tab-num">09</span>월별 리포트</button>
+    <button class="tab" data-tab="crewreport"><span class="tab-num">10</span>크루 리포트</button>
+  </nav>
+
+  <!-- ============ 01 DASHBOARD ============ -->
+  <section class="panel active" data-panel="dashboard">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">DASHBOARD</h2>
+        <div class="panel-sub">크루 전체 현황 한눈에 보기</div>
+      </div>
+    </div>
+
+    <div class="grid grid-4 mb-12">
+      <div class="card"><div class="stat-label">Total Distance</div><div class="stat-value"><span id="s-total-dist">0</span><span class="stat-unit">KM</span></div><div class="stat-hint" id="s-total-dist-hint">전체 누적</div></div>
+      <div class="card"><div class="stat-label">Total Runs</div><div class="stat-value"><span id="s-total-runs">0</span><span class="stat-unit">회</span></div><div class="stat-hint" id="s-total-runs-hint">전체 참여</div></div>
+      <div class="card"><div class="stat-label">Best Pace</div><div class="stat-value" id="s-best-pace">—</div><div class="stat-hint" id="s-best-pace-hint">크루 최고</div></div>
+      <div class="card"><div class="stat-label">Avg Pace</div><div class="stat-value" id="s-avg-pace">—</div><div class="stat-hint">전체 평균</div></div>
+    </div>
+
+    <div class="card mb-12">
+      <div class="card-title">다가오는 일정 <span class="card-title-sub">UPCOMING · 정기런 14일 / 대회 30일</span></div>
+      <div class="upcoming-list" id="upcoming-list"></div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">이달의 목표 <span class="card-title-sub" id="goal-month-label"></span></div>
+        <div id="goal-progress"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">최근 런 <span class="card-title-sub">RECENT ACTIVITY</span></div>
+        <button type="button" class="dash-filter-toggle" id="dash-filter-toggle"><span class="dot"></span>🔍 필터</button>
+        <div class="dash-filter-area" id="dash-filter-area" style="display:none;">
+          <div class="dash-filter-grid">
+            <div class="field"><label>크루원</label><select class="select" id="df-name"><option value="">전체</option></select></div>
+            <div class="field"><label>런 종류</label><select class="select" id="df-type">
+              <option value="">전체</option>
+              <option value="easy">이지런</option>
+              <option value="tempo">템포런</option>
+              <option value="long">롱런</option>
+              <option value="interval">인터벌</option>
+              <option value="race">대회</option>
+            </select></div>
+            <div class="field"><label>시작일</label><input class="input" type="date" id="df-from" /></div>
+            <div class="field"><label>종료일</label><input class="input" type="date" id="df-to" /></div>
+            <div class="field"><label>검색어 (이름/메모)</label><input class="input" type="text" id="df-q" placeholder="키워드" /></div>
+          </div>
+          <div class="dash-filter-foot">
+            <span class="dash-filter-result" id="df-result">—</span>
+            <button class="btn btn-ghost btn-sm" id="df-reset">초기화</button>
+          </div>
+        </div>
+        <div class="run-list" id="recent-runs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 ADD RUN ============ -->
+  <section class="panel" data-panel="add">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">LOG A RUN</h2>
+        <div class="panel-sub">새 런 기록 추가하기</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">런 정보 <span class="card-title-sub">INPUT</span></div>
+        <form id="run-form">
+          <div class="form-grid">
+            <div class="field">
+              <label>크루원</label>
+              <select class="select" id="f-name" required></select>
+            </div>
+            <div class="field">
+              <label>날짜</label>
+              <input class="input" type="date" id="f-date" required />
+            </div>
+            <div class="field">
+              <label>런 종류</label>
+              <select class="select" id="f-type">
+                <option value="easy">이지런</option>
+                <option value="tempo">템포런</option>
+                <option value="long">롱런</option>
+                <option value="interval">인터벌</option>
+                <option value="race">대회</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>거리 (km)</label>
+              <input class="input" type="number" step="0.01" min="0.1" id="f-dist" required />
+            </div>
+            <div class="field">
+              <label>페이스 (분:초)</label>
+              <input class="input" type="text" id="f-pace" placeholder="5:00" pattern="^\d{1,2}:\d{2}$" required />
+            </div>
+            <div class="field">
+              <label>심박수 (bpm)</label>
+              <input class="input" type="number" min="40" max="230" id="f-hr" placeholder="선택" />
+            </div>
+            <div class="field">
+              <label>날씨</label>
+              <select class="select" id="f-weather">
+                <option value="">선택</option>
+                <option>맑음</option><option>흐림</option><option>비</option>
+                <option>더움</option><option>추움</option><option>바람</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>메모</label>
+              <input class="input" type="text" id="f-memo" placeholder="코스, 컨디션 등" />
+            </div>
+            <div class="field full">
+              <button type="button" class="btn btn-ghost btn-sm" id="f-splits-toggle" style="width:100%;">📊 구간 스플릿 추가하기 <span style="color:var(--text-soft);font-weight:400;">(선택 · 1km 단위)</span></button>
+              <div class="splits-area" id="f-splits-area" style="display:none;">
+                <div id="f-splits-rows"></div>
+              </div>
+            </div>
+            <div class="field full">
+              <button class="btn btn-primary" type="submit">기록 저장</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title">심박존 가이드 <span class="card-title-sub">HR ZONES</span></div>
+        <p class="muted" style="font-size:13px; margin-bottom:10px;">최대심박수(HRmax) 대비 %로 구분된 훈련 강도입니다.</p>
+        <div class="zones">
+          <div class="zone z1"><span class="zn">Z1</span>50-60%<br>회복</div>
+          <div class="zone z2"><span class="zn">Z2</span>60-70%<br>이지</div>
+          <div class="zone z3"><span class="zn">Z3</span>70-80%<br>템포</div>
+          <div class="zone z4"><span class="zn">Z4</span>80-90%<br>역치</div>
+          <div class="zone z5"><span class="zn">Z5</span>90-100%<br>최대</div>
+        </div>
+        <hr class="divider" />
+        <div class="card-title" style="font-size:16px;">팁</div>
+        <p class="muted" style="font-size:13px; line-height:1.6;">
+          · 페이스 입력: <span class="mono">분:초</span> 형식 (예: <span class="mono">4:45</span>)<br>
+          · 이지런은 대화가 가능한 강도 (Z2)<br>
+          · 템포런은 <span class="mono">편안히 힘든</span> 상태 (Z3-Z4)<br>
+          · 인터벌은 짧고 강하게 (Z4-Z5)
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 ANALYSIS ============ -->
+  <section class="panel" data-panel="analysis">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">PACE ANALYSIS</h2>
+        <div class="panel-sub">페이스 · 심박수 · 날씨별 트렌드</div>
+      </div>
+    </div>
+
+    <div class="card mb-12">
+      <div class="card-title">페이스 추이 <span class="card-title-sub">PACE TREND</span></div>
+      <div class="filter-bar" id="pace-filter">
+        <button class="filter-chip active" data-type="all">전체</button>
+        <button class="filter-chip" data-type="easy">이지</button>
+        <button class="filter-chip" data-type="tempo">템포</button>
+        <button class="filter-chip" data-type="long">롱런</button>
+        <button class="filter-chip" data-type="interval">인터벌</button>
+        <button class="filter-chip" data-type="race">대회</button>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-pace"></canvas></div>
+    </div>
+
+    <div class="grid grid-2 mb-12">
+      <div class="card">
+        <div class="card-title">심박수 추이 <span class="card-title-sub">HEART RATE</span></div>
+        <div class="chart-wrap"><canvas id="chart-hr"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">날씨별 평균 페이스 <span class="card-title-sub">BY WEATHER</span></div>
+        <div class="chart-wrap"><canvas id="chart-weather"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">구간별 페이스 변화 <span class="card-title-sub">SPLIT ANALYSIS</span></div>
+      <div class="grid grid-3 mb-12" id="sa-stats"></div>
+      <div class="row-flex" style="margin-bottom:12px; gap:14px;">
+        <div class="field" style="min-width:240px; flex:1;">
+          <label>런 선택</label>
+          <select class="select" id="sa-run"></select>
+        </div>
+        <div style="align-self:flex-end; padding-bottom:10px; font-size:12px; color:var(--text-muted);" id="sa-delta">—</div>
+      </div>
+      <div class="chart-wrap" id="sa-chart-wrap"><canvas id="sa-chart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ 04 RANK ============ -->
+  <section class="panel" data-panel="rank">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">CREW RANKING</h2>
+        <div class="panel-sub">크루원별 성과 순위</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar" id="rank-filter">
+        <button class="filter-chip active" data-sort="pace">최고 페이스</button>
+        <button class="filter-chip" data-sort="dist">총 거리</button>
+        <button class="filter-chip" data-sort="count">참여 횟수</button>
+      </div>
+      <div id="rank-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ 05 GOALS ============ -->
+  <section class="panel" data-panel="goals">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">GOALS</h2>
+        <div class="panel-sub">크루원별 월간 목표 관리</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">목표 설정 <span class="card-title-sub">SET NEW GOAL</span></div>
+        <form id="goal-form">
+          <div class="form-grid">
+            <div class="field">
+              <label>크루원</label>
+              <select class="select" id="g-name" required></select>
+            </div>
+            <div class="field">
+              <label>월</label>
+              <input class="input" type="month" id="g-month" required />
+            </div>
+            <div class="field">
+              <label>목표 거리 (km)</label>
+              <input class="input" type="number" step="1" min="1" id="g-dist" placeholder="예: 100" />
+            </div>
+            <div class="field">
+              <label>목표 페이스</label>
+              <input class="input" type="text" id="g-pace" placeholder="4:40" pattern="^\d{1,2}:\d{2}$" />
+            </div>
+            <div class="field full">
+              <button class="btn btn-primary" type="submit">목표 저장</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div class="card-title">현재 목표 <span class="card-title-sub">ACTIVE GOALS</span></div>
+        <div id="goal-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 SCHEDULE ============ -->
+  <section class="panel" data-panel="schedule">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">SCHEDULED RUNS</h2>
+        <div class="panel-sub">정기런 · 이벤트 관리</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">새 일정 <span class="card-title-sub">NEW EVENT</span></div>
+        <form id="sched-form">
+          <div class="form-grid">
+            <div class="field full"><label>런 이름</label><input class="input" id="sc-name" required /></div>
+            <div class="field"><label>날짜</label><input class="input" type="date" id="sc-date" required /></div>
+            <div class="field"><label>시간</label><input class="input" type="time" id="sc-time" required /></div>
+            <div class="field"><label>장소</label><input class="input" id="sc-loc" /></div>
+            <div class="field"><label>목표 거리</label><input class="input" id="sc-dist" placeholder="10km" /></div>
+            <div class="field full"><button class="btn btn-primary" type="submit">일정 추가</button></div>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div class="card-title">예정된 런 <span class="card-title-sub">UPCOMING</span></div>
+        <div id="sched-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 RACES ============ -->
+  <section class="panel" data-panel="races">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">RACE CALENDAR</h2>
+        <div class="panel-sub">대회 일정 · D-day 카운트다운</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">대회 추가 <span class="card-title-sub">ADD RACE</span></div>
+        <form id="race-form">
+          <div class="form-grid">
+            <div class="field full"><label>대회명</label><input class="input" id="r-name" required /></div>
+            <div class="field"><label>날짜</label><input class="input" type="date" id="r-date" required /></div>
+            <div class="field">
+              <label>종목</label>
+              <select class="select" id="r-cat">
+                <option>풀마라톤</option><option>하프</option><option>10K</option><option>5K</option><option>기타</option>
+              </select>
+            </div>
+            <div class="field"><label>장소</label><input class="input" id="r-loc" /></div>
+            <div class="field"><label>목표 기록</label><input class="input" id="r-goal" placeholder="3:30:00" /></div>
+            <div class="field full"><button class="btn btn-primary" type="submit">대회 등록</button></div>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div class="card-title">등록된 대회 <span class="card-title-sub">EVENTS</span></div>
+        <div id="race-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 08 MEMBERS ============ -->
+  <section class="panel" data-panel="members">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">CREW MEMBERS</h2>
+        <div class="panel-sub">크루원 추가 · 관리</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">새 크루원 <span class="card-title-sub">ADD MEMBER</span></div>
+        <form id="member-form">
+          <div class="form-grid">
+            <div class="field full">
+              <label>이름</label>
+              <input class="input" id="m-name" required maxlength="12" placeholder="크루원 이름" />
+            </div>
+            <div class="field full">
+              <button class="btn btn-primary" type="submit">크루원 추가</button>
+            </div>
+          </div>
+        </form>
+        <hr class="divider" />
+        <p class="muted" style="font-size:12px; line-height:1.6;">
+          · 동명이인은 등록 불가 (숫자 또는 이니셜 추가 권장)<br>
+          · 크루원 삭제 시 해당 인원의 기록·목표가 <strong>함께 삭제</strong>됩니다<br>
+          · 기록이 있는 크루원은 삭제 시 한 번 더 확인
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-title">크루 명단 <span class="card-title-sub">ROSTER · <span id="member-count">0</span></span></div>
+        <div id="member-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 09 REPORT ============ -->
+  <section class="panel" data-panel="report">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">MONTHLY REPORT</h2>
+        <div class="panel-sub">월별 성과 리포트 · 이미지 저장 & 인쇄</div>
+      </div>
+    </div>
+
+    <div class="card mb-12">
+      <div class="row-flex">
+        <div class="field" style="min-width:160px;">
+          <label>크루원</label>
+          <select class="select" id="rep-name"></select>
+        </div>
+        <div class="field" style="min-width:160px;">
+          <label>대상 월</label>
+          <input class="input" type="month" id="rep-month" />
+        </div>
+        <div class="field" style="align-self:flex-end;">
+          <button class="btn btn-primary" id="rep-generate">리포트 생성</button>
+        </div>
+        <div class="field" style="align-self:flex-end;">
+          <button class="btn btn-ghost" id="rep-download">이미지 저장</button>
+        </div>
+        <div class="field" style="align-self:flex-end;">
+          <button class="btn btn-ghost" id="rep-print">인쇄</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="report-container"></div>
+  </section>
+
+  <!-- ============ 10 CREW REPORT ============ -->
+  <section class="panel" data-panel="crewreport">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">CREW REPORT</h2>
+        <div class="panel-sub">월별 크루 종합 리포트</div>
+      </div>
+    </div>
+
+    <div class="card mb-12">
+      <div class="row-flex">
+        <div class="field" style="min-width:200px;">
+          <label>대상 월</label>
+          <select class="select" id="cr-month"></select>
+        </div>
+      </div>
+    </div>
+
+    <div id="cr-content"></div>
+  </section>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   HYVERSE Running Crew Tracker v2
+   ============================================================ */
+
+/* ---------- 1. STORAGE LAYER ---------- */
+const KEYS = { runs: 'hv-runs', goals: 'hv-goals', sched: 'hv-sched', races: 'hv-races', members: 'hv-members' };
+const load = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
+const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+let runs = load(KEYS.runs);
+let goals = load(KEYS.goals);
+let schedules = load(KEYS.sched);
+let races = load(KEYS.races);
+let members = load(KEYS.members);
+
+/* ---------- 2. SEED DATA ---------- */
+function seedIfEmpty() {
+  const fresh = !runs.length && !goals.length && !schedules.length && !races.length && !members.length;
+  if (!fresh) {
+    // migrate: if members empty but runs exist, derive members from runs
+    if (!members.length && runs.length) {
+      const names = [...new Set(runs.map(r => r.name))];
+      members = names.map((n, i) => ({ id: Date.now() + i, name: n, addedAt: new Date().toISOString().slice(0,10) }));
+      save(KEYS.members, members);
+    }
+    return;
+  }
+  members = [
+    { id: 1, name: '민준', addedAt: '2025-09-01' },
+    { id: 2, name: '서연', addedAt: '2025-09-01' },
+    { id: 3, name: '지호', addedAt: '2025-09-15' },
+  ];
+  runs = [
+    { id: 1, name: '민준', date: '2025-10-12', type: 'long', dist: 18, pace: 5.4, paceStr: '5:24', hr: 155, weather: '맑음', memo: '한강 롱런' },
+    { id: 2, name: '서연', date: '2025-11-08', type: 'tempo', dist: 10, pace: 4.55, paceStr: '4:33', hr: 168, weather: '흐림', memo: '템포 세션' },
+    { id: 3, name: '지호', date: '2025-12-20', type: 'easy', dist: 6, pace: 6.2, paceStr: '6:12', hr: 140, weather: '추움', memo: '회복런' },
+    { id: 4, name: '민준', date: '2026-01-15', type: 'interval', dist: 8, pace: 4.3, paceStr: '4:18', hr: 175, weather: '바람', memo: '400m x 10' },
+    { id: 5, name: '서연', date: '2026-02-22', type: 'race', dist: 10, pace: 4.2, paceStr: '4:12', hr: 180, weather: '맑음', memo: '동아일보 10K' },
+    { id: 6, name: '지호', date: '2026-03-10', type: 'tempo', dist: 12, pace: 5.15, paceStr: '5:09', hr: 162, weather: '맑음', memo: '강변 템포' },
+    { id: 7, name: '민준', date: '2026-04-05', type: 'long', dist: 22, pace: 5.2, paceStr: '5:12', hr: 158, weather: '맑음', memo: '서울 주행' },
+    { id: 8, name: '서연', date: '2026-04-20', type: 'easy', dist: 8, pace: 5.5, paceStr: '5:30', hr: 148, weather: '흐림', memo: '회복' },
+  ];
+  goals = [
+    { id: 1, name: '민준', month: '2026-04', dist: 100, pace: '4:40' },
+    { id: 2, name: '서연', month: '2026-04', dist: 80, pace: '4:30' },
+    { id: 3, name: '지호', month: '2026-04', dist: 60, pace: '5:30' },
+  ];
+  schedules = [
+    { id: 1, name: '한강 일요일런', date: '2026-04-27', time: '07:00', loc: '여의도 한강공원', dist: '15km', attendees: ['민준', '서연'] },
+    { id: 2, name: '남산 야간런', date: '2026-05-02', time: '20:00', loc: '남산 N서울타워', dist: '10km', attendees: ['지호'] },
+  ];
+  races = [
+    { id: 1, name: '서울국제마라톤 2026', date: '2026-05-03', cat: '풀마라톤', loc: '광화문', goal: '3:30:00' },
+    { id: 2, name: 'JTBC 서울마라톤', date: '2026-11-01', cat: '풀마라톤', loc: '상암월드컵경기장', goal: '3:20:00' },
+    { id: 3, name: '춘천 10K', date: '2026-06-15', cat: '10K', loc: '의암호 일원', goal: '40:00' },
+  ];
+  save(KEYS.members, members); save(KEYS.runs, runs); save(KEYS.goals, goals); save(KEYS.sched, schedules); save(KEYS.races, races);
+}
+
+/* ---------- 3. HELPERS ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const fmtDate = (s) => { const d = new Date(s); return isNaN(d) ? s : d.toLocaleDateString('ko-KR', { year:'numeric', month:'short', day:'numeric' }); };
+const mdPart = (s) => { const d = new Date(s); return isNaN(d) ? { m:'', d:'' } : { m: (d.getMonth()+1)+'월', d: d.getDate() }; };
+const paceToMin = (str) => { if (!str) return null; const p = str.split(':'); return +p[0] + (+p[1])/60; };
+const minToPace = (n) => { if (n == null || isNaN(n)) return '—'; const m = Math.floor(n); const s = Math.round((n-m)*60); return `${m}:${String(s).padStart(2,'0')}`; };
+const daysDiff = (dateStr) => { const d = new Date(dateStr); const t = new Date(); d.setHours(0,0,0,0); t.setHours(0,0,0,0); return Math.round((d-t)/86400000); };
+
+const weatherEmoji = w => ({ '맑음':'☀️','흐림':'☁️','비':'🌧️','더움':'🌡️','추움':'❄️','바람':'💨' }[w] || '');
+const typeLabel = t => ({ easy:'이지', tempo:'템포', long:'롱런', interval:'인터벌', race:'대회' }[t] || t);
+
+const AVATAR_COLORS = ['#00C4A0','#f59e0b','#6366f1','#ec4899','#dc2626','#16a34a','#0ea5e9','#8b5cf6','#d97706','#14b8a6'];
+const avatarColor = (name) => { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return AVATAR_COLORS[h % AVATAR_COLORS.length]; };
+const avatarHtml = name => `<div class="avatar" style="background:${avatarColor(name)}">${(name||'?').slice(0,1)}</div>`;
+
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); }
+
+function confirmModal({ title, body, confirmText='확인', danger=false }) {
+  return new Promise(resolve => {
+    const m = $('#modal');
+    m.innerHTML = `
+      <div class="modal-head"><div class="modal-title">${title}</div></div>
+      <div style="font-size:14px; line-height:1.6; color:var(--text-muted);">${body}</div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="mc-cancel">취소</button>
+        <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="mc-ok">${confirmText}</button>
+      </div>`;
+    $('#modal-backdrop').classList.add('active');
+    const close = (v) => { $('#modal-backdrop').classList.remove('active'); resolve(v); };
+    $('#mc-cancel').onclick = () => close(false);
+    $('#mc-ok').onclick = () => close(true);
+  });
+}
+
+/* ---------- 4. TAB NAV ---------- */
+$$('.tab').forEach(t => t.addEventListener('click', () => {
+  $$('.tab').forEach(x => x.classList.remove('active'));
+  $$('.panel').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  try { t.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+  const panel = $(`[data-panel="${t.dataset.tab}"]`);
+  panel.classList.add('active');
+  // Per-tab render
+  const name = t.dataset.tab;
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'analysis') renderAnalysis();
+  if (name === 'rank') renderRank();
+  if (name === 'goals') renderGoals();
+  if (name === 'schedule') renderSchedule();
+  if (name === 'races') renderRaces();
+  if (name === 'members') renderMembers();
+  if (name === 'report') renderReportPanel();
+  if (name === 'crewreport') renderCrewReport();
+}));
+
+/* ---------- 5. MEMBER SELECT SYNC ---------- */
+function refreshMemberSelects() {
+  const selects = [$('#f-name'), $('#g-name'), $('#rep-name')];
+  selects.forEach(sel => {
+    if (!sel) return;
+    const cur = sel.value;
+    if (!members.length) {
+      sel.innerHTML = '<option value="">— 먼저 크루원을 등록하세요 —</option>';
+    } else {
+      sel.innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+      if (cur && members.find(m => m.name === cur)) sel.value = cur;
+    }
+  });
+  refreshDashFilterSelect();
+}
+
+function refreshDashFilterSelect() {
+  const sel = $('#df-name');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">전체</option>' + members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+  if (cur && members.find(m => m.name === cur)) sel.value = cur;
+}
+
+let dashFilter = { name: '', type: '', from: '', to: '', q: '' };
+function dashFilterActive() { return Object.values(dashFilter).some(v => v && v.length); }
+function applyDashFilter(arr) {
+  return arr.filter(r => {
+    if (dashFilter.name && r.name !== dashFilter.name) return false;
+    if (dashFilter.type && r.type !== dashFilter.type) return false;
+    if (dashFilter.from && r.date < dashFilter.from) return false;
+    if (dashFilter.to && r.date > dashFilter.to) return false;
+    if (dashFilter.q) {
+      const q = dashFilter.q.toLowerCase();
+      const memo = (r.memo||'').toLowerCase();
+      const name = (r.name||'').toLowerCase();
+      if (!memo.includes(q) && !name.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+$('#dash-filter-toggle').onclick = () => {
+  const a = $('#dash-filter-area');
+  a.style.display = a.style.display === 'none' ? 'block' : 'none';
+};
+['df-name','df-type','df-from','df-to','df-q'].forEach(id => {
+  const el = $(`#${id}`);
+  if (!el) return;
+  const ev = (id === 'df-q') ? 'input' : 'change';
+  el.addEventListener(ev, () => {
+    dashFilter = {
+      name: $('#df-name').value, type: $('#df-type').value,
+      from: $('#df-from').value, to: $('#df-to').value,
+      q: $('#df-q').value.trim(),
+    };
+    renderDashboard();
+  });
+});
+$('#df-reset').onclick = () => {
+  dashFilter = { name:'', type:'', from:'', to:'', q:'' };
+  ['df-name','df-type','df-from','df-to','df-q'].forEach(id => { const el = $(`#${id}`); if (el) el.value = ''; });
+  renderDashboard();
+};
+
+/* ---------- 6. DASHBOARD ---------- */
+function renderUpcoming() {
+  const el = $('#upcoming-list');
+  if (!el) return;
+  const items = [];
+  schedules.forEach(s => {
+    const d = daysDiff(s.date);
+    if (d >= 0 && d <= 14) items.push({ kind: 'schedule', d, ...s });
+  });
+  races.forEach(r => {
+    const d = daysDiff(r.date);
+    if (d >= 0 && d <= 30) items.push({ kind: 'race', d, ...r });
+  });
+  items.sort((a, b) => a.date.localeCompare(b.date) || a.d - b.d);
+
+  if (!items.length) {
+    el.innerHTML = `<div class="upcoming-empty">다가오는 일정이 없어요</div>`;
+    return;
+  }
+
+  el.innerHTML = items.map(it => {
+    const cls = it.d <= 3 ? 'soon' : '';
+    const label = it.d === 0 ? 'TODAY' : `D-${it.d}`;
+    const isRace = it.kind === 'race';
+    const catCls = isRace ? ({ '풀마라톤':'race', '하프':'tempo', '10K':'easy', '5K':'long', '기타':'' }[it.cat] || '') : '';
+    const typeBadge = isRace
+      ? `<span class="chip ${catCls}">🏁 ${it.cat}</span>`
+      : `<span class="chip brand">🏃 정기런</span>`;
+    const meta = isRace ? fmtDate(it.date) : `${fmtDate(it.date)} · ${it.time||''}`;
+    const loc = it.loc || '장소 미정';
+    return `<div class="upcoming-card" data-tab-jump="${isRace ? 'races' : 'schedule'}">
+      <div class="dday ${cls}">${label}</div>
+      <div class="upcoming-name">${it.name}</div>
+      <div class="upcoming-meta">${meta}</div>
+      <div class="upcoming-loc">📍 ${loc}</div>
+      <div>${typeBadge}</div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('[data-tab-jump]').forEach(c => c.addEventListener('click', () => {
+    const t = document.querySelector(`.tab[data-tab="${c.dataset.tabJump}"]`);
+    if (t) t.click();
+  }));
+}
+
+function renderDashboard() {
+  renderUpcoming();
+  const total = runs.reduce((a,r) => a + r.dist, 0);
+  $('#s-total-dist').textContent = total.toFixed(1);
+  $('#s-total-runs').textContent = runs.length;
+  $('#s-total-dist-hint').textContent = `${members.length}명 · 누적`;
+  $('#s-total-runs-hint').textContent = runs.length ? `최근: ${fmtDate(runs.slice().sort((a,b)=>b.date.localeCompare(a.date))[0].date)}` : '기록 없음';
+
+  const paces = runs.map(r => r.pace).filter(Boolean);
+  $('#s-best-pace').textContent = paces.length ? minToPace(Math.min(...paces)) : '—';
+  $('#s-avg-pace').textContent = paces.length ? minToPace(paces.reduce((a,b)=>a+b,0)/paces.length) : '—';
+  const bestRun = runs.slice().sort((a,b)=>a.pace-b.pace)[0];
+  $('#s-best-pace-hint').textContent = bestRun ? `${bestRun.name} · ${fmtDate(bestRun.date)}` : '';
+
+  // Goals
+  const curMonth = new Date().toISOString().slice(0,7);
+  $('#goal-month-label').textContent = curMonth;
+  const gp = $('#goal-progress');
+  const monthGoals = goals.filter(g => g.month === curMonth);
+  if (!monthGoals.length) {
+    gp.innerHTML = `<div class="empty"><div class="empty-icon">🎯</div><div class="empty-title">이달 목표 없음</div><div class="empty-sub">목표 관리 탭에서 설정해보세요</div></div>`;
+  } else {
+    gp.innerHTML = monthGoals.map(g => {
+      const done = runs.filter(r => r.name === g.name && r.date.startsWith(curMonth)).reduce((a,r)=>a+r.dist,0);
+      const pct = g.dist ? Math.min(100, (done / g.dist) * 100) : 0;
+      const color = pct >= 100 ? 'var(--ok)' : pct >= 70 ? '#eab308' : '#f97316';
+      return `<div class="progress-row">
+        <div class="row-flex">${avatarHtml(g.name)}<div><div style="font-weight:600; font-size:13px;">${g.name}</div><div class="mono" style="font-size:10px; color:var(--text-muted);">${done.toFixed(1)} / ${g.dist}km</div></div></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${color}"></div></div>
+        <div class="progress-pct">${pct.toFixed(0)}%</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent runs with edit/delete + filter
+  const rc = $('#recent-runs');
+  const allSorted = runs.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const filtered = applyDashFilter(allSorted);
+  const isFiltered = dashFilterActive();
+  const list = isFiltered ? filtered : filtered.slice(0, 6);
+  $('#dash-filter-toggle').classList.toggle('active', isFiltered);
+  $('#df-result').textContent = `총 ${allSorted.length}개 중 ${filtered.length}개 표시`;
+  if (!list.length) {
+    rc.innerHTML = isFiltered
+      ? `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">조건에 맞는 기록 없음</div><div class="empty-sub">필터를 조정하거나 초기화하세요</div></div>`
+      : `<div class="empty"><div class="empty-icon">🏃</div><div class="empty-title">기록 없음</div><div class="empty-sub">기록 추가 탭에서 첫 런을 남겨보세요</div></div>`;
+  } else {
+    rc.innerHTML = list.map(r => {
+      const md = mdPart(r.date);
+      return `<div class="run-row">
+        <div class="run-date">${md.m}<span class="md">${md.d}</span></div>
+        <div class="run-main">
+          <div class="run-line1">
+            <span class="run-name">${r.name}</span>
+            <span class="chip ${r.type}">${typeLabel(r.type)}</span>
+            ${r.weather ? `<span class="chip">${weatherEmoji(r.weather)} ${r.weather}</span>` : ''}
+            ${r.hr ? `<span class="chip">♡ ${r.hr}</span>` : ''}
+            ${r.splits && r.splits.length ? `<span class="chip splits" data-splits="${r.id}" title="스플릿 보기">📊 ${r.splits.length}구간</span>` : ''}
+          </div>
+          ${r.memo ? `<div class="run-meta">${r.memo}</div>` : ''}
+        </div>
+        <div class="run-stats">
+          <div class="run-stat"><div class="v">${r.dist}</div><div class="u">KM</div></div>
+          <div class="run-stat"><div class="v">${r.paceStr}</div><div class="u">PACE</div></div>
+        </div>
+        <div class="run-actions">
+          <button class="btn-icon" data-edit="${r.id}" title="수정">✎</button>
+          <button class="btn-icon danger" data-del="${r.id}" title="삭제">×</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    rc.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openEditRun(+b.dataset.edit)));
+    rc.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => deleteRun(+b.dataset.del)));
+    rc.querySelectorAll('[data-splits]').forEach(b => b.addEventListener('click', () => openSplitsView(+b.dataset.splits)));
+  }
+}
+
+/* ---------- 7. RUN CRUD ---------- */
+const SEG_KM = 1;
+const fmtKm = n => Number.isInteger(n) ? String(n) : (+n.toFixed(2)).toString();
+
+function generateSplitRows(dist, prefix = 'f') {
+  const area = $(`#${prefix}-splits-rows`);
+  if (!area) return;
+  const existing = {};
+  area.querySelectorAll('.split-row').forEach(row => {
+    const v = row.querySelector('input').value;
+    if (v) existing[`${row.dataset.from}-${row.dataset.to}`] = v;
+  });
+  if (!dist || dist <= 0) {
+    area.innerHTML = '<div class="splits-empty">먼저 거리를 입력하세요</div>';
+    return;
+  }
+  const segs = [];
+  let from = 0;
+  while (from < dist - 0.001) {
+    const to = +Math.min(from + SEG_KM, dist).toFixed(2);
+    segs.push({ from, to });
+    from = to;
+  }
+  area.innerHTML = segs.map(s => {
+    const key = `${s.from}-${s.to}`;
+    const val = existing[key] || '';
+    return `<div class="split-row" data-from="${s.from}" data-to="${s.to}">
+      <span class="split-label">${fmtKm(s.from)} ~ ${fmtKm(s.to)} km</span>
+      <input type="text" class="input" placeholder="5:30" value="${val}" />
+    </div>`;
+  }).join('');
+}
+
+function collectSplits(prefix = 'f') {
+  const rows = $$(`#${prefix}-splits-rows .split-row`);
+  if (!rows.length) return null;
+  const splits = [];
+  rows.forEach(row => {
+    const paceStr = row.querySelector('input').value.trim();
+    if (!paceStr) return;
+    const paceMin = paceToMin(paceStr);
+    if (!paceMin || paceMin < 2 || paceMin > 15) return;
+    splits.push({
+      from: parseFloat(row.dataset.from),
+      to: parseFloat(row.dataset.to),
+      pace: paceStr,
+      paceMin,
+    });
+  });
+  return splits.length ? splits : null;
+}
+
+$('#f-splits-toggle').addEventListener('click', () => {
+  const area = $('#f-splits-area');
+  const isOpen = area.style.display !== 'none';
+  area.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) generateSplitRows(parseFloat($('#f-dist').value));
+});
+
+$('#f-dist').addEventListener('input', () => {
+  if ($('#f-splits-area').style.display !== 'none') {
+    generateSplitRows(parseFloat($('#f-dist').value));
+  }
+});
+
+$('#run-form').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!members.length) { toast('먼저 크루원을 등록하세요'); return; }
+  const paceStr = $('#f-pace').value.trim();
+  const pace = paceToMin(paceStr);
+  if (!pace || pace < 2 || pace > 15) { toast('페이스 형식을 확인하세요 (예: 5:00)'); return; }
+
+  const rec = {
+    id: Date.now(),
+    name: $('#f-name').value,
+    date: $('#f-date').value,
+    type: $('#f-type').value,
+    dist: parseFloat($('#f-dist').value),
+    pace, paceStr,
+    hr: $('#f-hr').value ? parseInt($('#f-hr').value) : null,
+    weather: $('#f-weather').value || null,
+    memo: $('#f-memo').value.trim(),
+  };
+  const splits = collectSplits();
+  if (splits) rec.splits = splits;
+  runs.push(rec);
+  save(KEYS.runs, runs);
+  e.target.reset();
+  $('#f-date').value = new Date().toISOString().slice(0,10);
+  $('#f-splits-area').style.display = 'none';
+  $('#f-splits-rows').innerHTML = '';
+  toast('기록 저장 완료');
+  renderDashboard();
+});
+
+async function deleteRun(id) {
+  const r = runs.find(x => x.id === id);
+  if (!r) return;
+  const ok = await confirmModal({
+    title: '기록 삭제',
+    body: `<strong>${r.name}</strong>님의 <strong>${fmtDate(r.date)}</strong> 런 기록(${r.dist}km · ${r.paceStr})을 삭제합니다.<br><br>이 작업은 되돌릴 수 없습니다.`,
+    confirmText: '삭제', danger: true,
+  });
+  if (!ok) return;
+  runs = runs.filter(x => x.id !== id);
+  save(KEYS.runs, runs);
+  toast('삭제되었습니다');
+  renderDashboard();
+}
+
+function openEditRun(id) {
+  const r = runs.find(x => x.id === id);
+  if (!r) return;
+  const m = $('#modal');
+  m.innerHTML = `
+    <div class="modal-head"><div class="modal-title">EDIT RUN</div></div>
+    <div class="form-grid">
+      <div class="field"><label>크루원</label><select class="select" id="e-name">${members.map(x=>`<option ${x.name===r.name?'selected':''}>${x.name}</option>`).join('')}</select></div>
+      <div class="field"><label>날짜</label><input class="input" type="date" id="e-date" value="${r.date}" /></div>
+      <div class="field"><label>런 종류</label><select class="select" id="e-type">
+        ${['easy','tempo','long','interval','race'].map(t=>`<option value="${t}" ${t===r.type?'selected':''}>${typeLabel(t)}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>거리 (km)</label><input class="input" type="number" step="0.01" id="e-dist" value="${r.dist}" /></div>
+      <div class="field"><label>페이스</label><input class="input" id="e-pace" value="${r.paceStr}" pattern="^\\d{1,2}:\\d{2}$" /></div>
+      <div class="field"><label>심박수</label><input class="input" type="number" id="e-hr" value="${r.hr||''}" /></div>
+      <div class="field"><label>날씨</label><select class="select" id="e-weather">
+        <option value="">선택</option>${['맑음','흐림','비','더움','추움','바람'].map(w=>`<option ${w===r.weather?'selected':''}>${w}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>메모</label><input class="input" id="e-memo" value="${r.memo||''}" /></div>
+      <div class="field full">
+        <button type="button" class="btn btn-ghost btn-sm" id="e-splits-toggle" style="width:100%;">📊 구간 스플릿 추가하기 <span style="color:var(--text-soft);font-weight:400;">(선택 · 1km 단위)</span></button>
+        <div class="splits-area" id="e-splits-area" style="display:none;">
+          <div id="e-splits-rows"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="e-cancel">취소</button>
+      <button class="btn btn-primary" id="e-save">저장</button>
+    </div>`;
+  $('#modal-backdrop').classList.add('active');
+  $('#e-cancel').onclick = () => $('#modal-backdrop').classList.remove('active');
+
+  // Pre-populate splits if existing
+  if (r.splits && r.splits.length) {
+    $('#e-splits-rows').innerHTML = r.splits.map(s => `<div class="split-row" data-from="${s.from}" data-to="${s.to}">
+      <span class="split-label">${fmtKm(s.from)} ~ ${fmtKm(s.to)} km</span>
+      <input type="text" class="input" placeholder="5:30" value="${s.pace}" />
+    </div>`).join('');
+    $('#e-splits-area').style.display = 'block';
+  }
+  $('#e-splits-toggle').onclick = () => {
+    const area = $('#e-splits-area');
+    const isOpen = area.style.display !== 'none';
+    area.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) generateSplitRows(parseFloat($('#e-dist').value), 'e');
+  };
+  $('#e-dist').oninput = () => {
+    if ($('#e-splits-area').style.display !== 'none') {
+      generateSplitRows(parseFloat($('#e-dist').value), 'e');
+    }
+  };
+
+  $('#e-save').onclick = () => {
+    const paceStr = $('#e-pace').value.trim();
+    const pace = paceToMin(paceStr);
+    if (!pace) { toast('페이스 형식 오류'); return; }
+    Object.assign(r, {
+      name: $('#e-name').value,
+      date: $('#e-date').value,
+      type: $('#e-type').value,
+      dist: parseFloat($('#e-dist').value),
+      pace, paceStr,
+      hr: $('#e-hr').value ? parseInt($('#e-hr').value) : null,
+      weather: $('#e-weather').value || null,
+      memo: $('#e-memo').value.trim(),
+    });
+    const splits = collectSplits('e');
+    if (splits) r.splits = splits;
+    else delete r.splits;
+    save(KEYS.runs, runs);
+    $('#modal-backdrop').classList.remove('active');
+    toast('수정 완료');
+    renderDashboard();
+  };
+}
+
+let splitsChart = null;
+function openSplitsView(id) {
+  const r = runs.find(x => x.id === id);
+  if (!r || !r.splits || !r.splits.length) return;
+  const m = $('#modal');
+  const avgPace = r.pace;
+  const rows = r.splits.map(s => {
+    const sec = Math.round((s.paceMin - avgPace) * 60);
+    const cls = Math.abs(sec) < 5 ? '' : sec < 0 ? 'good' : 'bad';
+    const sign = sec >= 0 ? '+' : '−';
+    const abs = Math.abs(sec);
+    const dm = Math.floor(abs / 60);
+    const ds = abs % 60;
+    const deltaStr = `${sign}${dm}:${String(ds).padStart(2,'0')}`;
+    return `<div class="split-detail-row">
+      <span class="split-label">${fmtKm(s.from)} ~ ${fmtKm(s.to)} km</span>
+      <span class="split-pace">${s.pace} <span style="color:var(--text-soft);font-size:11px;font-weight:400;">/km</span></span>
+      <span class="split-delta ${cls}" title="평균 대비">${deltaStr}</span>
+    </div>`;
+  }).join('');
+  m.innerHTML = `
+    <div class="modal-head"><div class="modal-title">SPLITS · ${r.name}</div></div>
+    <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      ${fmtDate(r.date)} · ${r.dist}km · 평균 ${r.paceStr}<span style="color:var(--text-soft);font-size:11px;">/km</span>
+    </div>
+    <div style="height:200px; margin-bottom:16px; position:relative;"><canvas id="splits-chart"></canvas></div>
+    <div>${rows}</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="sp-close">닫기</button>
+    </div>`;
+  $('#modal-backdrop').classList.add('active');
+  $('#sp-close').onclick = () => $('#modal-backdrop').classList.remove('active');
+
+  if (splitsChart) { splitsChart.destroy(); splitsChart = null; }
+  setTimeout(() => {
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
+    const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#e5e5e5';
+    const cv = $('#splits-chart');
+    if (!cv) return;
+    splitsChart = new Chart(cv, {
+      type: 'line',
+      data: {
+        labels: r.splits.map(s => `${fmtKm(s.to)}km`),
+        datasets: [{
+          label: '구간 페이스',
+          data: r.splits.map(s => s.paceMin),
+          borderColor: '#00C4A0',
+          backgroundColor: 'rgba(0,196,160,0.18)',
+          tension: 0.25,
+          fill: true,
+          pointRadius: 4,
+          pointBackgroundColor: '#00C4A0',
+        }, {
+          label: '평균 페이스',
+          data: r.splits.map(() => avgPace),
+          borderColor: 'rgba(148,163,184,0.7)',
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: textColor, boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${minToPace(ctx.parsed.y)}/km` } }
+        },
+        scales: {
+          x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
+          y: { reverse: true, ticks: { color: textColor, font: { size: 11 }, callback: (v) => minToPace(v) }, grid: { color: gridColor } },
+        }
+      }
+    });
+  }, 30);
+}
+
+/* ---------- 8. ANALYSIS CHARTS ---------- */
+let charts = { pace:null, hr:null, weather:null };
+let paceFilter = 'all';
+function renderAnalysis() {
+  const filtered = paceFilter === 'all' ? runs : runs.filter(r => r.type === paceFilter);
+  const sorted = filtered.slice().sort((a,b) => a.date.localeCompare(b.date));
+
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
+  const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#e5e5e5';
+  const common = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: textColor, font: { family: 'DM Sans' } } } },
+    scales: {
+      x: { ticks: { color: textColor }, grid: { color: gridColor } },
+      y: { ticks: { color: textColor }, grid: { color: gridColor } },
+    }
+  };
+
+  // Pace trend
+  if (charts.pace) charts.pace.destroy();
+  charts.pace = new Chart($('#chart-pace'), {
+    type: 'line',
+    data: {
+      labels: sorted.map(r => r.date.slice(5)),
+      datasets: [{ label: '페이스 (분/km)', data: sorted.map(r => r.pace), borderColor: '#00C4A0', backgroundColor: 'rgba(0,196,160,0.15)', tension: 0.3, fill: true, pointRadius: 5, pointHoverRadius: 7 }]
+    },
+    options: { ...common, scales: { ...common.scales, y: { ...common.scales.y, reverse: true, title: { display: true, text: '분/km (낮을수록 빠름)', color: textColor } } } }
+  });
+
+  // HR
+  if (charts.hr) charts.hr.destroy();
+  const hrRuns = runs.filter(r => r.hr).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  charts.hr = new Chart($('#chart-hr'), {
+    type: 'line',
+    data: { labels: hrRuns.map(r => r.date.slice(5)), datasets: [{ label: '심박수 (bpm)', data: hrRuns.map(r => r.hr), borderColor: '#e53935', backgroundColor: 'rgba(229,57,53,0.12)', tension: 0.3, fill: true, pointRadius: 4 }] },
+    options: common
+  });
+
+  // Weather
+  if (charts.weather) charts.weather.destroy();
+  const weatherMap = {};
+  runs.forEach(r => { if (r.weather) { weatherMap[r.weather] = weatherMap[r.weather] || []; weatherMap[r.weather].push(r.pace); } });
+  const wLabels = Object.keys(weatherMap);
+  const wData = wLabels.map(k => weatherMap[k].reduce((a,b)=>a+b,0)/weatherMap[k].length);
+  charts.weather = new Chart($('#chart-weather'), {
+    type: 'bar',
+    data: { labels: wLabels.map(w => `${weatherEmoji(w)} ${w}`), datasets: [{ label: '평균 페이스', data: wData, backgroundColor: '#00C4A0', borderRadius: 6 }] },
+    options: { ...common, scales: { ...common.scales, y: { ...common.scales.y, reverse: true } } }
+  });
+
+  renderSplitsAnalysis();
+}
+$('#pace-filter').addEventListener('click', e => {
+  const b = e.target.closest('.filter-chip');
+  if (!b) return;
+  $$('#pace-filter .filter-chip').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  paceFilter = b.dataset.type;
+  renderAnalysis();
+});
+
+let splitsAnalysisChart = null;
+function renderSplitsAnalysis() {
+  const sel = $('#sa-run');
+  const statsEl = $('#sa-stats');
+  const wrap = $('#sa-chart-wrap');
+  const deltaEl = $('#sa-delta');
+  if (!sel || !statsEl || !wrap) return;
+
+  const splitRuns = runs.filter(r => r.splits && r.splits.length >= 2)
+    .slice().sort((a,b) => b.date.localeCompare(a.date));
+
+  if (!splitRuns.length) {
+    statsEl.innerHTML = '';
+    sel.innerHTML = '<option value="">스플릿 기록된 런 없음</option>';
+    deltaEl.textContent = '';
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">스플릿 기록된 런이 없어요</div><div class="empty-sub">기록 추가 시 구간 스플릿을 입력하면 여기에 표시됩니다</div></div>`;
+    if (splitsAnalysisChart) { splitsAnalysisChart.destroy(); splitsAnalysisChart = null; }
+    return;
+  }
+
+  // Stats
+  let strong = 0, steady = 0, broken = 0;
+  splitRuns.forEach(r => {
+    const sp = r.splits;
+    const first = sp[0].paceMin;
+    const last = sp[sp.length-1].paceMin;
+    const max = Math.max(...sp.map(s=>s.paceMin));
+    const min = Math.min(...sp.map(s=>s.paceMin));
+    if (last < first) strong++;
+    if ((max - min) <= 10/60) steady++;
+    if (last - first >= 30/60) broken++;
+  });
+  statsEl.innerHTML = `
+    <div class="card"><div class="stat-label">후반 강한 런</div><div class="stat-value">${strong}<span class="stat-unit">회</span></div><div class="stat-hint">마지막 구간이 첫 구간보다 빠름</div></div>
+    <div class="card"><div class="stat-label">페이스 유지</div><div class="stat-value">${steady}<span class="stat-unit">회</span></div><div class="stat-hint">최대-최소 편차 10초 이내</div></div>
+    <div class="card"><div class="stat-label">후반 무너짐</div><div class="stat-value">${broken}<span class="stat-unit">회</span></div><div class="stat-hint">마지막이 첫 구간보다 30초 이상 느림</div></div>
+  `;
+
+  // Run select
+  const cur = sel.value;
+  sel.innerHTML = splitRuns.map(r => `<option value="${r.id}">${r.date} · ${r.name} · ${r.dist}km (${r.paceStr})</option>`).join('');
+  if (cur && splitRuns.find(r => String(r.id) === cur)) sel.value = cur;
+
+  const r = splitRuns.find(x => String(x.id) === sel.value) || splitRuns[0];
+
+  // Delta first→last
+  const first = r.splits[0];
+  const last = r.splits[r.splits.length-1];
+  const deltaSec = Math.round((last.paceMin - first.paceMin) * 60);
+  const sign = deltaSec >= 0 ? '+' : '−';
+  const abs = Math.abs(deltaSec);
+  const dm = Math.floor(abs / 60);
+  const ds = abs % 60;
+  const deltaStr = abs === 0 ? '동일' : (dm > 0 ? `${sign}${dm}:${String(ds).padStart(2,'0')}` : `${sign}${ds}초`);
+  const label = deltaSec > 0 ? '느려짐' : deltaSec < 0 ? '빨라짐' : '';
+  const cls = Math.abs(deltaSec) < 5 ? '' : deltaSec < 0 ? 'good' : 'bad';
+  deltaEl.innerHTML = `첫 구간 <strong>${first.pace}</strong> → 마지막 <strong>${last.pace}</strong> <span class="split-delta ${cls}" style="margin-left:8px;">${deltaStr} ${label}</span>`;
+
+  // Chart
+  wrap.innerHTML = '<canvas id="sa-chart"></canvas>';
+  if (splitsAnalysisChart) { splitsAnalysisChart.destroy(); splitsAnalysisChart = null; }
+  setTimeout(() => {
+    const cv = $('#sa-chart');
+    if (!cv) return;
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
+    const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#e5e5e5';
+    splitsAnalysisChart = new Chart(cv, {
+      type: 'line',
+      data: {
+        labels: r.splits.map(s => `${fmtKm(s.to)}km`),
+        datasets: [
+          { label: '구간 페이스', data: r.splits.map(s => s.paceMin), borderColor: '#00C4A0', backgroundColor: 'rgba(0,196,160,0.18)', tension: 0.25, fill: true, pointRadius: 4 },
+          { label: '평균 페이스', data: r.splits.map(() => r.pace), borderColor: 'rgba(148,163,184,0.7)', borderDash: [4,4], pointRadius: 0, fill: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: textColor, boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${minToPace(ctx.parsed.y)}/km` } }
+        },
+        scales: {
+          x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
+          y: { reverse: true, ticks: { color: textColor, font: { size: 11 }, callback: (v) => minToPace(v) }, grid: { color: gridColor } }
+        }
+      }
+    });
+  }, 30);
+}
+
+$('#sa-run').addEventListener('change', () => renderSplitsAnalysis());
+
+/* ---------- 9. RANK ---------- */
+let rankSort = 'pace';
+function renderRank() {
+  const by = {};
+  runs.forEach(r => {
+    by[r.name] = by[r.name] || { name: r.name, best: Infinity, total: 0, count: 0 };
+    by[r.name].best = Math.min(by[r.name].best, r.pace);
+    by[r.name].total += r.dist;
+    by[r.name].count++;
+  });
+  let arr = Object.values(by);
+  if (rankSort === 'pace') arr.sort((a,b) => a.best - b.best);
+  if (rankSort === 'dist') arr.sort((a,b) => b.total - a.total);
+  if (rankSort === 'count') arr.sort((a,b) => b.count - a.count);
+
+  const el = $('#rank-list');
+  if (!arr.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">데이터 없음</div></div>`; return; }
+  el.innerHTML = arr.map((x, i) => {
+    const val = rankSort === 'pace' ? minToPace(x.best) : rankSort === 'dist' ? x.total.toFixed(1) : x.count;
+    const unit = rankSort === 'pace' ? '/KM' : rankSort === 'dist' ? 'KM' : '회';
+    return `<div class="rank-row">
+      <div class="rank-num">${i+1}</div>
+      ${avatarHtml(x.name)}
+      <div><div style="font-weight:600; font-size:14px;">${x.name}</div><div class="mono" style="font-size:11px; color:var(--text-muted);">${x.count}회 · ${x.total.toFixed(1)}km · best ${minToPace(x.best)}</div></div>
+      <div style="text-align:right;"><div class="rank-val">${val}</div><div class="rank-val-u">${unit}</div></div>
+    </div>`;
+  }).join('');
+}
+$('#rank-filter').addEventListener('click', e => {
+  const b = e.target.closest('.filter-chip');
+  if (!b) return;
+  $$('#rank-filter .filter-chip').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  rankSort = b.dataset.sort;
+  renderRank();
+});
+
+/* ---------- 10. GOALS ---------- */
+$('#goal-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('#g-name').value;
+  const month = $('#g-month').value;
+  if (!name || !month) { toast('필수값 확인'); return; }
+  const dist = $('#g-dist').value ? parseInt($('#g-dist').value) : null;
+  const pace = $('#g-pace').value.trim() || null;
+  const existing = goals.find(g => g.name === name && g.month === month);
+  if (existing) { existing.dist = dist; existing.pace = pace; }
+  else goals.push({ id: Date.now(), name, month, dist, pace });
+  save(KEYS.goals, goals);
+  e.target.reset();
+  toast('목표 저장');
+  renderGoals();
+});
+
+function renderGoals() {
+  const el = $('#goal-list');
+  const sorted = goals.slice().sort((a,b)=>b.month.localeCompare(a.month));
+  if (!sorted.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">🎯</div><div class="empty-title">목표 없음</div></div>`; return; }
+  el.innerHTML = sorted.map(g => {
+    const done = runs.filter(r => r.name === g.name && r.date.startsWith(g.month)).reduce((a,r)=>a+r.dist,0);
+    const pct = g.dist ? Math.min(100, (done/g.dist)*100) : 0;
+    const color = pct >= 100 ? 'var(--ok)' : pct >= 70 ? '#eab308' : '#f97316';
+    return `<div class="progress-row">
+      <div class="row-flex">${avatarHtml(g.name)}<div><div style="font-weight:600; font-size:13px;">${g.name}</div><div class="mono" style="font-size:10px; color:var(--text-muted);">${g.month} · ${done.toFixed(1)}/${g.dist||'—'}km${g.pace?` · ${g.pace}/km`:''}</div></div></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${color}"></div></div>
+      <div class="progress-pct">${pct.toFixed(0)}%</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- 11. SCHEDULE ---------- */
+$('#sched-form').addEventListener('submit', e => {
+  e.preventDefault();
+  schedules.push({
+    id: Date.now(),
+    name: $('#sc-name').value, date: $('#sc-date').value, time: $('#sc-time').value,
+    loc: $('#sc-loc').value, dist: $('#sc-dist').value, attendees: [],
+  });
+  save(KEYS.sched, schedules);
+  e.target.reset();
+  toast('일정 추가');
+  renderSchedule();
+});
+
+function renderSchedule() {
+  const el = $('#sched-list');
+  const upcoming = schedules.slice().filter(s => daysDiff(s.date) >= -1).sort((a,b)=>a.date.localeCompare(b.date));
+  if (!upcoming.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">예정된 런 없음</div></div>`; return; }
+  el.innerHTML = upcoming.map(s => {
+    const d = daysDiff(s.date);
+    const cls = d < 0 ? 'done' : d <= 7 ? 'soon' : '';
+    const label = d === 0 ? 'D-DAY' : d < 0 ? `D+${-d}` : `D-${d}`;
+    return `<div class="sched-card">
+      <div class="dday ${cls}">${label}</div>
+      <div class="sched-info">
+        <div class="t">${s.name}</div>
+        <div class="m">${fmtDate(s.date)} ${s.time} · ${s.loc||'장소 미정'} ${s.dist?`· ${s.dist}`:''}</div>
+        <div>${(s.attendees||[]).map(a=>`<span class="attendee-pill">${a}</span>`).join('')}</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+        ${members.map(m => {
+          const going = (s.attendees||[]).includes(m.name);
+          return `<button class="btn btn-sm ${going?'btn-primary':'btn-ghost'}" data-sc="${s.id}" data-mn="${m.name}">${going?'✓':'+'} ${m.name}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-sc]').forEach(b => b.addEventListener('click', () => {
+    const s = schedules.find(x => x.id === +b.dataset.sc);
+    s.attendees = s.attendees || [];
+    const n = b.dataset.mn;
+    s.attendees = s.attendees.includes(n) ? s.attendees.filter(x=>x!==n) : [...s.attendees, n];
+    save(KEYS.sched, schedules); renderSchedule();
+  }));
+}
+
+/* ---------- 12. RACES ---------- */
+$('#race-form').addEventListener('submit', e => {
+  e.preventDefault();
+  races.push({
+    id: Date.now(),
+    name: $('#r-name').value, date: $('#r-date').value, cat: $('#r-cat').value,
+    loc: $('#r-loc').value, goal: $('#r-goal').value,
+  });
+  save(KEYS.races, races);
+  e.target.reset();
+  toast('대회 등록');
+  renderRaces();
+});
+
+function renderRaces() {
+  const el = $('#race-list');
+  const sorted = races.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  if (!sorted.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">🏁</div><div class="empty-title">등록된 대회 없음</div></div>`; return; }
+  el.innerHTML = sorted.map(r => {
+    const d = daysDiff(r.date);
+    const cls = d < 0 ? 'done' : d <= 30 ? 'soon' : 'far';
+    const label = d === 0 ? 'D-DAY' : d < 0 ? 'DONE' : `D-${d}`;
+    const catCls = { '풀마라톤':'race', '하프':'tempo', '10K':'easy', '5K':'long', '기타':'' }[r.cat] || '';
+    return `<div class="race-card">
+      <div class="dday ${cls}">${label}</div>
+      <div class="sched-info">
+        <div class="t">${r.name} <span class="chip ${catCls}">${r.cat}</span></div>
+        <div class="m">${fmtDate(r.date)} · ${r.loc||'장소 미정'}${r.goal?` · 목표 ${r.goal}`:''}</div>
+      </div>
+      <div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- 13. MEMBERS ---------- */
+$('#member-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('#m-name').value.trim();
+  if (!name) return;
+  if (members.find(m => m.name === name)) { toast('이미 등록된 이름입니다'); return; }
+  members.push({ id: Date.now(), name, addedAt: new Date().toISOString().slice(0,10) });
+  save(KEYS.members, members);
+  e.target.reset();
+  toast(`${name}님이 크루에 합류했습니다`);
+  renderMembers();
+  refreshMemberSelects();
+});
+
+async function deleteMember(id) {
+  const m = members.find(x => x.id === id);
+  if (!m) return;
+  const myRuns = runs.filter(r => r.name === m.name);
+  const myGoals = goals.filter(g => g.name === m.name);
+
+  let body = `<strong>${m.name}</strong>님을 크루 명단에서 제외합니다.`;
+  if (myRuns.length || myGoals.length) {
+    body += `<br><br>⚠️ <strong>관련 데이터도 함께 삭제됩니다:</strong><br>
+      · 런 기록 <strong>${myRuns.length}건</strong><br>
+      · 목표 <strong>${myGoals.length}건</strong><br><br>
+      이 작업은 되돌릴 수 없습니다.`;
+  }
+  const ok = await confirmModal({ title: '크루원 삭제', body, confirmText: '삭제', danger: true });
+  if (!ok) return;
+
+  members = members.filter(x => x.id !== id);
+  runs = runs.filter(r => r.name !== m.name);
+  goals = goals.filter(g => g.name !== m.name);
+  schedules.forEach(s => { s.attendees = (s.attendees||[]).filter(a => a !== m.name); });
+
+  save(KEYS.members, members); save(KEYS.runs, runs); save(KEYS.goals, goals); save(KEYS.sched, schedules);
+  toast(`${m.name}님이 삭제되었습니다`);
+  renderMembers();
+  refreshMemberSelects();
+}
+
+function renderMembers() {
+  const el = $('#member-list');
+  $('#member-count').textContent = members.length;
+  if (!members.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div class="empty-title">크루원 없음</div><div class="empty-sub">왼쪽에서 첫 멤버를 추가해보세요</div></div>`;
+    return;
+  }
+  el.innerHTML = members.map(m => {
+    const myRuns = runs.filter(r => r.name === m.name);
+    const total = myRuns.reduce((a,r)=>a+r.dist,0);
+    return `<div class="member-row">
+      ${avatarHtml(m.name)}
+      <div>
+        <div class="member-name">${m.name}</div>
+        <div class="member-stats">${myRuns.length}회 · ${total.toFixed(1)}km · 등록 ${m.addedAt}</div>
+      </div>
+      <div></div>
+      <button class="btn-icon danger" data-del-m="${m.id}" title="삭제">×</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-del-m]').forEach(b => b.addEventListener('click', () => deleteMember(+b.dataset.delM)));
+}
+
+/* ---------- 14. MONTHLY REPORT ---------- */
+let reportChart = null;
+function renderReportPanel() {
+  if (!$('#rep-month').value) $('#rep-month').value = new Date().toISOString().slice(0,7);
+}
+
+$('#rep-generate').addEventListener('click', () => {
+  const name = $('#rep-name').value;
+  const month = $('#rep-month').value;
+  if (!name || !month) { toast('크루원과 월을 선택하세요'); return; }
+  generateReport(name, month);
+});
+
+function generateReport(name, month) {
+  const myRuns = runs.filter(r => r.name === name && r.date.startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
+  const goal = goals.find(g => g.name === name && g.month === month);
+  const total = myRuns.reduce((a,r)=>a+r.dist,0);
+  const paces = myRuns.map(r => r.pace).filter(Boolean);
+  const avgPace = paces.length ? paces.reduce((a,b)=>a+b,0)/paces.length : null;
+  const bestPace = paces.length ? Math.min(...paces) : null;
+  const bestRun = myRuns.slice().sort((a,b)=>a.pace-b.pace)[0];
+  const longRun = myRuns.slice().sort((a,b)=>b.dist-a.dist)[0];
+  const hrs = myRuns.map(r=>r.hr).filter(Boolean);
+  const avgHr = hrs.length ? Math.round(hrs.reduce((a,b)=>a+b,0)/hrs.length) : null;
+
+  const typeCount = {};
+  myRuns.forEach(r => { typeCount[r.type] = (typeCount[r.type]||0) + 1; });
+
+  const goalPct = goal?.dist ? Math.min(100, (total/goal.dist)*100).toFixed(0) : null;
+
+  const container = $('#report-container');
+  container.innerHTML = `
+    <div class="card">
+      <div id="report-view" class="report-view">
+        <div class="report-header">
+          <div>
+            <div class="report-brand">HY<span class="a">VERSE</span></div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#666; letter-spacing:0.1em; text-transform:uppercase; margin-top:4px;">Monthly Running Report</div>
+          </div>
+          <div class="report-period">
+            RUNNER<br>
+            <span class="big">${name}</span>
+            <div style="margin-top:6px;">${month}</div>
+          </div>
+        </div>
+
+        <div class="report-stats">
+          <div class="report-stat"><div class="report-stat-label">Total Distance</div><div class="report-stat-val">${total.toFixed(1)}<span style="font-size:14px; font-family:'DM Sans',sans-serif; color:#666;"> KM</span></div></div>
+          <div class="report-stat"><div class="report-stat-label">Runs</div><div class="report-stat-val">${myRuns.length}<span style="font-size:14px; font-family:'DM Sans',sans-serif; color:#666;"> 회</span></div></div>
+          <div class="report-stat"><div class="report-stat-label">Avg Pace</div><div class="report-stat-val">${avgPace?minToPace(avgPace):'—'}</div></div>
+          <div class="report-stat"><div class="report-stat-label">Best Pace</div><div class="report-stat-val">${bestPace?minToPace(bestPace):'—'}</div></div>
+        </div>
+
+        ${goal ? `<div class="report-section">
+          <div class="report-section-title">Goal Progress</div>
+          <div style="background:#f4f4ef; padding:14px; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; color:#111;">
+              <span><strong>${name}</strong> · ${month}</span>
+              <span class="mono">${total.toFixed(1)} / ${goal.dist||'—'}km ${goal.pace?` · 목표 ${goal.pace}`:''}</span>
+            </div>
+            ${goal.dist ? `<div style="height:10px; background:#e5e3db; border-radius:999px; overflow:hidden;">
+              <div style="height:100%; width:${goalPct}%; background:${goalPct>=100?'#22c55e':goalPct>=70?'#eab308':'#f97316'}; border-radius:999px;"></div>
+            </div>
+            <div style="text-align:right; font-family:'Bebas Neue',sans-serif; font-size:24px; margin-top:6px;">${goalPct}<span style="font-size:12px; font-family:'DM Sans',sans-serif; color:#666;">%</span></div>` : ''}
+          </div>
+        </div>` : ''}
+
+        ${myRuns.length ? `
+          <div class="report-section">
+            <div class="report-section-title">Highlights</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:12px; color:#111;">
+              ${bestRun ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Best Pace</div><div style="font-family:'Bebas Neue',sans-serif; font-size:22px; margin:4px 0;">${bestRun.paceStr}/KM</div><div style="color:#666;">${fmtDate(bestRun.date)} · ${bestRun.dist}km</div></div>` : ''}
+              ${longRun ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Longest Run</div><div style="font-family:'Bebas Neue',sans-serif; font-size:22px; margin:4px 0;">${longRun.dist} KM</div><div style="color:#666;">${fmtDate(longRun.date)} · ${longRun.paceStr}</div></div>` : ''}
+              ${avgHr ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Avg HR</div><div style="font-family:'Bebas Neue',sans-serif; font-size:22px; margin:4px 0;">${avgHr} BPM</div><div style="color:#666;">${hrs.length}회 측정</div></div>` : `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Run Types</div><div style="font-family:'Bebas Neue',sans-serif; font-size:18px; margin:4px 0;">${Object.keys(typeCount).length} 종</div><div style="color:#666;">${Object.entries(typeCount).map(([k,v])=>`${typeLabel(k)} ${v}`).join(' · ')}</div></div>`}
+            </div>
+          </div>
+
+          <div class="report-section">
+            <div class="report-section-title">Pace Trend</div>
+            <div class="report-chart-wrap"><canvas id="rep-chart"></canvas></div>
+          </div>
+
+          <div class="report-section">
+            <div class="report-section-title">All Runs (${myRuns.length})</div>
+            <table class="report-table">
+              <thead><tr><th>DATE</th><th>TYPE</th><th>DIST</th><th>PACE</th><th>HR</th><th>WEATHER</th><th>MEMO</th></tr></thead>
+              <tbody>
+                ${myRuns.map(r => `<tr><td>${r.date.slice(5)}</td><td>${typeLabel(r.type)}</td><td>${r.dist}km</td><td>${r.paceStr}</td><td>${r.hr||'—'}</td><td>${r.weather?`${weatherEmoji(r.weather)} ${r.weather}`:'—'}</td><td style="color:#666;">${r.memo||'—'}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : `<div style="padding:40px; text-align:center; color:#666; background:#fafaf6; border-radius:8px;">해당 월에 기록이 없습니다</div>`}
+
+        <div class="report-footer">GENERATED BY HYVERSE · ${new Date().toISOString().slice(0,10)}</div>
+      </div>
+    </div>`;
+
+  // Chart
+  if (myRuns.length) {
+    setTimeout(() => {
+      if (reportChart) reportChart.destroy();
+      reportChart = new Chart($('#rep-chart'), {
+        type: 'line',
+        data: {
+          labels: myRuns.map(r => r.date.slice(5)),
+          datasets: [{ label: '페이스 (분/km)', data: myRuns.map(r => r.pace), borderColor: '#00C4A0', backgroundColor: 'rgba(0,196,160,0.2)', tension: 0.3, fill: true, pointRadius: 4 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#333' } } },
+          scales: {
+            x: { ticks: { color: '#666' }, grid: { color: '#e8e6de' } },
+            y: { reverse: true, ticks: { color: '#666' }, grid: { color: '#e8e6de' } }
+          }
+        }
+      });
+    }, 30);
+  }
+}
+
+$('#rep-download').addEventListener('click', async () => {
+  const el = $('#report-view');
+  if (!el) { toast('먼저 리포트를 생성하세요'); return; }
+  try {
+    const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2 });
+    const a = document.createElement('a');
+    a.download = `hyverse-report-${$('#rep-name').value}-${$('#rep-month').value}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    toast('이미지로 저장되었습니다');
+  } catch (err) {
+    toast('이미지 저장 실패: ' + err.message);
+  }
+});
+
+$('#rep-print').addEventListener('click', () => {
+  if (!$('#report-view')) { toast('먼저 리포트를 생성하세요'); return; }
+  window.print();
+});
+
+/* ---------- 14b. CREW REPORT ---------- */
+let crTypeChart = null;
+function renderCrewReport() {
+  const sel = $('#cr-month');
+  if (!sel) return;
+  const monthSet = new Set();
+  runs.forEach(r => monthSet.add(r.date.slice(0,7)));
+  races.forEach(r => monthSet.add(r.date.slice(0,7)));
+  const months = [...monthSet].sort().reverse();
+  if (!months.length) {
+    sel.innerHTML = '<option value="">데이터 없음</option>';
+    $('#cr-content').innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">📊</div><div class="empty-title">데이터 없음</div><div class="empty-sub">런이나 대회를 먼저 등록하세요</div></div></div>`;
+    if (crTypeChart) { crTypeChart.destroy(); crTypeChart = null; }
+    return;
+  }
+  const cur = sel.value && months.includes(sel.value) ? sel.value : months[0];
+  sel.innerHTML = months.map(m => `<option value="${m}" ${m===cur?'selected':''}>${m}</option>`).join('');
+  renderCrewReportFor(cur);
+}
+
+function renderCrewReportFor(month) {
+  const monthRuns = runs.filter(r => r.date.startsWith(month));
+  const monthRaces = races.filter(r => r.date.startsWith(month));
+
+  if (!monthRuns.length && !monthRaces.length) {
+    $('#cr-content').innerHTML = `<div class="card"><div class="empty"><div class="empty-icon">🌙</div><div class="empty-title">이 달은 기록이 없어요</div><div class="empty-sub">${month} 의 런/대회 데이터가 없습니다</div></div></div>`;
+    if (crTypeChart) { crTypeChart.destroy(); crTypeChart = null; }
+    return;
+  }
+
+  const total = monthRuns.reduce((a,r)=>a+r.dist,0);
+  const paces = monthRuns.map(r=>r.pace).filter(Boolean);
+  const avgPace = paces.length ? paces.reduce((a,b)=>a+b,0)/paces.length : null;
+
+  const byMember = {};
+  monthRuns.forEach(r => {
+    byMember[r.name] = byMember[r.name] || { name: r.name, count: 0, dist: 0, best: Infinity };
+    byMember[r.name].count++;
+    byMember[r.name].dist += r.dist;
+    byMember[r.name].best = Math.min(byMember[r.name].best, r.pace);
+  });
+  const memberArr = Object.values(byMember).sort((a,b) => b.dist - a.dist);
+
+  const bestRuns = monthRuns.slice().sort((a,b) => a.pace - b.pace).slice(0, 3);
+  const longRuns = monthRuns.slice().sort((a,b) => b.dist - a.dist).slice(0, 3);
+
+  const typeCount = {};
+  monthRuns.forEach(r => { typeCount[r.type] = (typeCount[r.type]||0) + 1; });
+
+  $('#cr-content').innerHTML = `
+    <div class="grid grid-3 mb-12">
+      <div class="card"><div class="stat-label">Total Runs</div><div class="stat-value">${monthRuns.length}<span class="stat-unit">회</span></div><div class="stat-hint">${month}</div></div>
+      <div class="card"><div class="stat-label">Total Distance</div><div class="stat-value">${total.toFixed(1)}<span class="stat-unit">KM</span></div><div class="stat-hint">크루 누적</div></div>
+      <div class="card"><div class="stat-label">Avg Pace</div><div class="stat-value">${avgPace?minToPace(avgPace):'—'}</div><div class="stat-hint">전체 평균</div></div>
+    </div>
+
+    <div class="grid grid-2 mb-12">
+      <div class="card">
+        <div class="card-title">크루원별 통계 <span class="card-title-sub">BY MEMBER</span></div>
+        ${memberArr.length ? `<table class="cr-table">
+          <thead><tr><th>이름</th><th>횟수</th><th>거리</th><th>베스트</th></tr></thead>
+          <tbody>
+            ${memberArr.map(m => `<tr>
+              <td>${m.name}</td>
+              <td>${m.count}회</td>
+              <td>${m.dist.toFixed(1)}km</td>
+              <td class="mono">${minToPace(m.best)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : `<div class="empty"><div class="empty-sub">기록 없음</div></div>`}
+      </div>
+      <div class="card">
+        <div class="card-title">런 종류별 분포 <span class="card-title-sub">BY TYPE</span></div>
+        ${monthRuns.length ? `<div style="height:220px; position:relative;"><canvas id="cr-type-chart"></canvas></div>` : `<div class="empty"><div class="empty-sub">기록 없음</div></div>`}
+      </div>
+    </div>
+
+    <div class="grid grid-2 mb-12">
+      <div class="card">
+        <div class="card-title">베스트 페이스 TOP 3 <span class="card-title-sub">FAST</span></div>
+        ${bestRuns.length ? bestRuns.map((r,i) => `<div class="cr-rank-row">
+          <div class="cr-rank-num">${i+1}</div>
+          <div><div class="cr-rank-name">${r.name} · ${r.dist}km</div><div class="cr-rank-meta">${r.date} · ${typeLabel(r.type)}</div></div>
+          <div class="cr-rank-val">${r.paceStr}</div>
+        </div>`).join('') : `<div class="empty"><div class="empty-sub">기록 없음</div></div>`}
+      </div>
+      <div class="card">
+        <div class="card-title">롱 런 TOP 3 <span class="card-title-sub">LONG</span></div>
+        ${longRuns.length ? longRuns.map((r,i) => `<div class="cr-rank-row">
+          <div class="cr-rank-num">${i+1}</div>
+          <div><div class="cr-rank-name">${r.name} · ${r.paceStr}/km</div><div class="cr-rank-meta">${r.date} · ${typeLabel(r.type)}</div></div>
+          <div class="cr-rank-val">${r.dist}<span style="font-size:11px; font-weight:400;">km</span></div>
+        </div>`).join('') : `<div class="empty"><div class="empty-sub">기록 없음</div></div>`}
+      </div>
+    </div>
+
+    ${monthRaces.length ? `<div class="card">
+      <div class="card-title">이달의 대회 <span class="card-title-sub">RACES · ${monthRaces.length}</span></div>
+      ${monthRaces.map(r => {
+        const d = daysDiff(r.date);
+        const cls = d < 0 ? 'done' : d <= 7 ? 'soon' : '';
+        const label = d === 0 ? 'D-DAY' : d < 0 ? 'DONE' : `D-${d}`;
+        const catCls = { '풀마라톤':'race', '하프':'tempo', '10K':'easy', '5K':'long', '기타':'' }[r.cat] || '';
+        return `<div class="race-card">
+          <div class="dday ${cls}">${label}</div>
+          <div class="sched-info">
+            <div class="t">${r.name} <span class="chip ${catCls}">${r.cat}</span></div>
+            <div class="m">${fmtDate(r.date)} · ${r.loc||'장소 미정'}${r.goal?` · 목표 ${r.goal}`:''}</div>
+          </div>
+          <div></div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+
+  // Type chart
+  if (crTypeChart) { crTypeChart.destroy(); crTypeChart = null; }
+  if (monthRuns.length) {
+    setTimeout(() => {
+      const cv = $('#cr-type-chart');
+      if (!cv) return;
+      const labels = Object.keys(typeCount).map(typeLabel);
+      const data = Object.values(typeCount);
+      const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
+      const palette = ['#00C4A0', '#f59e0b', '#6366f1', '#ec4899', '#dc2626'];
+      crTypeChart = new Chart(cv, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: palette, borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-elev').trim() || '#fff' }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, font: { size: 11 }, padding: 10 } },
+            tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}회` } }
+          },
+          cutout: '55%'
+        }
+      });
+    }, 30);
+  }
+}
+
+$('#cr-month').addEventListener('change', () => renderCrewReportFor($('#cr-month').value));
+
+/* ---------- 15. INIT ---------- */
+function init() {
+  seedIfEmpty();
+  const today = new Date().toISOString().slice(0,10);
+  $('#f-date').value = today;
+  $('#g-month').value = today.slice(0,7);
+  $('#rep-month').value = today.slice(0,7);
+  $('#today-label').textContent = today;
+  refreshMemberSelects();
+  renderDashboard();
+
+  // Close modal on backdrop
+  $('#modal-backdrop').addEventListener('click', e => {
+    if (e.target.id === 'modal-backdrop') $('#modal-backdrop').classList.remove('active');
+  });
+}
+init();
+</script>
+
+<!-- Service Worker registration (PWA) -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => console.log('[SW] registered, scope:', reg.scope))
+      .catch(err => console.warn('[SW] registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

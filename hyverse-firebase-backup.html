@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYVERSE Running Crew</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&family=Share+Tech+Mono&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:#06080f;color:#e8f4fd;font-family:'Noto Sans KR',sans-serif;overflow-x:hidden}
+
+  .bg{position:fixed;inset:0;z-index:0;
+    background:radial-gradient(ellipse at 15% 20%,rgba(13,71,161,.4) 0%,transparent 50%),
+               radial-gradient(ellipse at 85% 80%,rgba(21,101,192,.22) 0%,transparent 50%),#06080f}
+  .grid{position:fixed;inset:0;z-index:0;
+    background-image:linear-gradient(rgba(66,165,245,.04) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(66,165,245,.04) 1px,transparent 1px);
+    background-size:44px 44px}
+  .glow{position:fixed;top:-15%;left:50%;transform:translateX(-50%);
+    width:500px;height:260px;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse,rgba(33,150,243,.12) 0%,transparent 70%);
+    animation:gp 4s ease-in-out infinite}
+  @keyframes gp{0%,100%{opacity:.5}50%{opacity:1}}
+  .butterfly-bg{position:fixed;right:-40px;top:36%;z-index:0;pointer-events:none;
+    opacity:.05;animation:fbf 10s ease-in-out infinite}
+  @keyframes fbf{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-28px) rotate(4deg)}}
+
+  .wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 16px 110px}
+
+  /* Header */
+  .hdr{text-align:center;padding:36px 0 26px}
+  .logo-wrap{position:relative;width:92px;margin:0 auto 16px;cursor:pointer}
+  .ring{width:92px;height:92px;border-radius:50%;background:rgba(255,255,255,.03);
+    border:2px solid rgba(66,165,245,.3);display:flex;align-items:center;justify-content:center;
+    overflow:hidden;box-shadow:0 0 40px rgba(33,150,243,.2);animation:rp 3s ease-in-out infinite}
+  @keyframes rp{0%,100%{box-shadow:0 0 40px rgba(33,150,243,.2)}50%{box-shadow:0 0 60px rgba(33,150,243,.42)}}
+  .ring img{width:100%;height:100%;object-fit:cover}
+  .edit-badge{position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;
+    background:linear-gradient(135deg,#1565c0,#42a5f5);border:2px solid #06080f;
+    display:flex;align-items:center;justify-content:center;font-size:12px}
+  .crew-name{font-family:'Share Tech Mono',monospace;font-size:38px;letter-spacing:9px;
+    color:#e8f4fd;text-shadow:0 0 28px rgba(100,181,246,.5);line-height:1}
+  .crew-sub{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:4px;
+    color:rgba(100,181,246,.48);margin-top:7px;text-transform:uppercase}
+
+  /* Stats */
+  .stats{display:flex;gap:10px;margin:22px 0 24px}
+  .stile{flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(66,165,245,.13);
+    border-radius:14px;padding:16px 10px;text-align:center;position:relative;overflow:hidden}
+  .stile::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,rgba(66,165,245,.42),transparent)}
+  .sval{font-family:'Share Tech Mono',monospace;font-size:28px;color:#64b5f6;line-height:1}
+  .slbl{font-size:10px;color:rgba(232,244,253,.3);margin-top:5px;letter-spacing:1.5px;font-weight:700}
+
+  /* Tabs */
+  .tabs{display:flex;background:rgba(255,255,255,.03);border:1px solid rgba(66,165,245,.1);
+    border-radius:12px;padding:4px;margin-bottom:20px}
+  .tbtn{flex:1;padding:10px 4px;border:none;background:transparent;color:rgba(232,244,253,.3);
+    font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;
+    border-radius:9px;transition:all .22s}
+  .tbtn.on{background:linear-gradient(135deg,#1565c0,#1976d2);color:#e8f4fd;
+    box-shadow:0 4px 18px rgba(21,101,192,.45)}
+
+  /* Sort */
+  .chips{display:flex;gap:8px;margin-bottom:18px}
+  .chip{padding:7px 16px;border-radius:20px;border:1px solid rgba(66,165,245,.18);
+    background:transparent;color:rgba(232,244,253,.38);font-family:'Noto Sans KR',sans-serif;
+    font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+  .chip.on{background:rgba(21,101,192,.28);border-color:#42a5f5;color:#90caf9}
+
+  /* Card */
+  .card{background:rgba(255,255,255,.025);border:1px solid rgba(66,165,245,.09);
+    border-radius:16px;padding:16px;margin-bottom:10px;display:flex;align-items:center;
+    gap:12px;transition:all .22s;position:relative;overflow:hidden}
+  .card:hover{border-color:rgba(66,165,245,.28);transform:translateY(-2px);background:rgba(255,255,255,.04)}
+  .card.top{border-color:rgba(100,181,246,.38);background:rgba(21,101,192,.08)}
+  .rtag{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;min-width:34px;text-align:center;letter-spacing:1px}
+  .avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:17px;font-weight:900;color:#fff;flex-shrink:0;border:2px solid rgba(100,181,246,.25)}
+  .minfo{flex:1;min-width:0}
+  .mname{font-size:16px;font-weight:900;color:#e8f4fd;letter-spacing:.5px}
+  .mmeta{font-size:11px;color:rgba(232,244,253,.35);margin-top:3px}
+  .spill{display:inline-flex;align-items:center;gap:3px;background:rgba(255,87,34,.13);
+    border:1px solid rgba(255,87,34,.28);border-radius:6px;padding:2px 8px;font-size:10px;
+    color:#ff8a65;font-weight:700;margin-top:5px}
+  .pcnt{display:inline-flex;align-items:center;gap:3px;background:rgba(255,167,38,.1);
+    border:1px solid rgba(255,167,38,.25);border-radius:6px;padding:2px 8px;font-size:10px;
+    color:#ffa726;font-weight:700;margin-top:5px;margin-left:5px}
+  .pbar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:8px;overflow:hidden}
+  .pfill{height:100%;background:linear-gradient(90deg,#1565c0,#42a5f5,#90caf9);border-radius:2px;transition:width .6s}
+  .mkm{text-align:right;flex-shrink:0}
+  .kbig{font-family:'Share Tech Mono',monospace;font-size:24px;color:#64b5f6;line-height:1}
+  .ksm{font-size:10px;color:rgba(232,244,253,.3);font-weight:700;margin-top:2px}
+  .card-actions{display:flex;gap:6px;margin-top:8px}
+  .act-btn{padding:5px 12px;border-radius:8px;border:1px solid rgba(66,165,245,.2);
+    background:transparent;color:rgba(100,181,246,.7);font-family:'Noto Sans KR',sans-serif;
+    font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+  .act-btn:hover{background:rgba(21,101,192,.25);border-color:#42a5f5;color:#90caf9}
+  .act-btn.ph{border-color:rgba(255,167,38,.3);color:rgba(255,167,38,.7)}
+  .act-btn.ph:hover{background:rgba(255,167,38,.12);border-color:#ffa726;color:#ffb74d}
+
+  /* Attendance dots */
+  .dots{display:flex;align-items:center;gap:5px;margin-top:5px;flex-wrap:wrap}
+  .dot{width:7px;height:7px;border-radius:50%;background:rgba(232,244,253,.09)}
+  .dot.on{background:#42a5f5;box-shadow:0 0 5px rgba(66,165,245,.55)}
+
+  /* Photos grid */
+  .photo-section{margin-bottom:20px}
+  .photo-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .photo-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .photo-thumb{border-radius:10px;overflow:hidden;border:1px solid rgba(66,165,245,.15);position:relative;cursor:pointer}
+  .photo-thumb img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+  .photo-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(6,8,15,.8));
+    padding:12px 6px 5px;font-size:9px;color:rgba(232,244,253,.7);font-family:'Share Tech Mono',monospace}
+  .no-photo{border:1px dashed rgba(66,165,245,.12);border-radius:12px;padding:20px;
+    text-align:center;color:rgba(232,244,253,.2);font-size:12px}
+
+  /* FAB */
+  .fab-wrap{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:10}
+  .fab{background:linear-gradient(135deg,#1565c0,#1976d2);color:#e8f4fd;border:none;
+    border-radius:50px;padding:15px 28px;font-family:'Noto Sans KR',sans-serif;font-size:14px;
+    font-weight:800;cursor:pointer;box-shadow:0 8px 32px rgba(21,101,192,.5);transition:all .2s;
+    letter-spacing:1px;white-space:nowrap}
+  .fab:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(21,101,192,.65)}
+
+  /* Modal */
+  .ov{position:fixed;inset:0;background:rgba(6,8,15,.85);backdrop-filter:blur(12px);
+    z-index:20;display:flex;align-items:flex-end;justify-content:center;display:none}
+  .ov.show{display:flex}
+  .modal{background:#0c1018;border:1px solid rgba(66,165,245,.22);border-radius:24px 24px 0 0;
+    padding:28px 24px 50px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto}
+  .mhandle{width:40px;height:4px;background:rgba(255,255,255,.09);border-radius:2px;margin:0 auto 22px}
+  .mttl{font-size:18px;font-weight:900;color:#64b5f6;margin-bottom:20px;letter-spacing:.5px}
+  .minput{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(66,165,245,.18);
+    border-radius:12px;padding:15px 16px;color:#e8f4fd;font-family:'Noto Sans KR',sans-serif;
+    font-size:15px;margin-bottom:12px;outline:none;transition:border-color .2s}
+  .minput:focus{border-color:#42a5f5}
+  .minput::placeholder{color:rgba(232,244,253,.22)}
+  .mbtn{width:100%;padding:16px;background:linear-gradient(135deg,#1565c0,#1976d2);color:#e8f4fd;
+    border:none;border-radius:12px;font-family:'Noto Sans KR',sans-serif;font-size:15px;
+    font-weight:800;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 20px rgba(21,101,192,.4);transition:all .2s}
+  .mbtn.ora{background:linear-gradient(135deg,#e65100,#f57c00);box-shadow:0 4px 20px rgba(230,81,0,.35)}
+  .mbtn:disabled{opacity:.35;cursor:not-allowed}
+  .mcancel{width:100%;padding:13px;background:transparent;color:rgba(232,244,253,.28);border:none;
+    font-family:'Noto Sans KR',sans-serif;font-size:14px;cursor:pointer;margin-top:8px}
+  .upload-area{width:100%;aspect-ratio:16/9;border:2px dashed rgba(255,167,38,.3);border-radius:14px;
+    margin-bottom:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;transition:all .2s;overflow:hidden;position:relative;background:rgba(255,255,255,.02)}
+  .upload-area:hover{border-color:#ffa726}
+  .upload-area img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+  .upload-placeholder{text-align:center;z-index:1}
+  .upload-icon{font-size:36px;margin-bottom:8px}
+  .upload-text{font-size:13px;color:rgba(232,244,253,.4);font-weight:600}
+
+  /* Gallery */
+  .gallery-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+  .gallery-item{border-radius:12px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(66,165,245,.12)}
+  .gallery-item img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+  .gallery-meta{padding:8px 10px}
+  .gallery-date{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(100,181,246,.6)}
+  .gallery-note{font-size:11px;color:rgba(232,244,253,.6);margin-top:3px;line-height:1.4}
+
+  /* Loading / Toast */
+  .loading{text-align:center;padding:40px;color:rgba(232,244,253,.4);font-family:'Share Tech Mono',monospace}
+  .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);
+    background:rgba(21,101,192,.93);color:#e8f4fd;border:1px solid rgba(66,165,245,.35);
+    padding:12px 26px;border-radius:50px;font-size:14px;font-weight:700;z-index:99;
+    white-space:nowrap;backdrop-filter:blur(10px);opacity:0;transition:opacity .3s;pointer-events:none}
+  .toast.show{opacity:1}
+
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(66,165,245,.2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="grid"></div>
+<div class="glow"></div>
+<div class="butterfly-bg">
+  <img id="bgButterfly" src="" style="width:200px" alt="">
+</div>
+
+<div class="wrap">
+  <div class="hdr">
+    <div class="logo-wrap" onclick="document.getElementById('logoInput').click()">
+      <div class="ring"><img id="logoImg" src="" alt="HYVERSE"></div>
+      <div class="edit-badge">✏️</div>
+      <input type="file" id="logoInput" accept="image/*" style="display:none">
+    </div>
+    <div class="crew-name">HYVERSE</div>
+    <div class="crew-sub">Running Crew</div>
+  </div>
+
+  <div class="stats">
+    <div class="stile"><div class="sval" id="statMembers">-</div><div class="slbl">MEMBERS</div></div>
+    <div class="stile"><div class="sval" id="statKm">-</div><div class="slbl">TOTAL KM</div></div>
+    <div class="stile"><div class="sval" id="statSessions">-</div><div class="slbl">SESSIONS</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tbtn on" onclick="switchTab('leaderboard',this)">🏆 리더보드</button>
+    <button class="tbtn" onclick="switchTab('attendance',this)">📋 출석</button>
+    <button class="tbtn" onclick="switchTab('photos',this)">📸 인증샷</button>
+  </div>
+
+  <div id="tab-leaderboard">
+    <div class="chips">
+      <button class="chip on" onclick="setSort('totalKm',this)">총 거리</button>
+      <button class="chip" onclick="setSort('sessions',this)">출석</button>
+      <button class="chip" onclick="setSort('streak',this)">연속</button>
+    </div>
+    <div id="leaderboard-list"><div class="loading">🦋 데이터 불러오는 중...</div></div>
+  </div>
+
+  <div id="tab-attendance" style="display:none">
+    <div id="attendance-list"><div class="loading">🦋 데이터 불러오는 중...</div></div>
+  </div>
+
+  <div id="tab-photos" style="display:none">
+    <div id="photos-list"><div class="loading">🦋 데이터 불러오는 중...</div></div>
+  </div>
+</div>
+
+<div class="fab-wrap">
+  <button class="fab" onclick="openAddMember()">🦋 멤버 추가</button>
+</div>
+
+<!-- 멤버 추가 모달 -->
+<div class="ov" id="modal-add" onclick="closeModal('modal-add')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mttl">🦋 새 멤버 합류</div>
+    <input class="minput" id="input-newname" placeholder="이름 입력" onkeydown="if(event.key==='Enter')addMember()">
+    <button class="mbtn" onclick="addMember()">HYVERSE 합류하기</button>
+    <button class="mcancel" onclick="closeModal('modal-add')">취소</button>
+  </div>
+</div>
+
+<!-- 러닝 기록 모달 -->
+<div class="ov" id="modal-run" onclick="closeModal('modal-run')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mttl" id="run-modal-title">러닝 기록</div>
+    <input class="minput" id="input-km" type="number" placeholder="거리 (km) · 예: 5.5">
+    <input class="minput" id="input-pace" placeholder="페이스 (선택) · 예: 5:30">
+    <button class="mbtn" onclick="logRun()">기록 저장 💨</button>
+    <button class="mcancel" onclick="closeModal('modal-run')">취소</button>
+  </div>
+</div>
+
+<!-- 인증샷 모달 -->
+<div class="ov" id="modal-photo" onclick="closeModal('modal-photo')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mttl" id="photo-modal-title">📸 인증샷 등록</div>
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoInput').click()">
+      <div class="upload-placeholder" id="uploadPlaceholder">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">사진을 선택하세요</div>
+      </div>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none">
+    <input class="minput" id="input-note" placeholder="한 마디 남기기 (선택) · 예: 오늘 10km 완주!">
+    <button class="mbtn ora" id="submitPhotoBtn" onclick="submitPhoto()" disabled>인증샷 등록 📸</button>
+    <button class="mcancel" onclick="closeModal('modal-photo')">취소</button>
+  </div>
+</div>
+
+<!-- 갤러리 모달 -->
+<div class="ov" id="modal-gallery" onclick="closeModal('modal-gallery')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mttl" id="gallery-title">인증샷</div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+    <button class="mcancel" onclick="closeModal('modal-gallery')">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBpp746-fwscMY5N5Ixlz-ya2U9ffHiG08",
+  authDomain: "hyverse-ab902.firebaseapp.com",
+  databaseURL: "https://hyverse-ab902-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "hyverse-ab902",
+  storageBucket: "hyverse-ab902.firebasestorage.app",
+  messagingSenderId: "149264408802",
+  appId: "1:149264408802:web:c2d386a1cea574dfd03ebb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 기본 나비 이미지
+const DEFAULT_LOGO = "data:image/png;base64,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";
+
+const RANK_COLORS = ["#64b5f6","#90caf9","#b3e5fc","rgba(232,244,253,0.25)"];
+const RANK_LABELS = ["1ST","2ND","3RD","4TH"];
+const AV_COLORS = [["#1565c0","#42a5f5"],["#0d47a1","#64b5f6"],["#1976d2","#90caf9"],["#283593","#7986cb"]];
+
+let members = {};
+let sortBy = "totalKm";
+let activeTab = "leaderboard";
+let currentMemberId = null;
+let photoDataUrl = null;
+
+// 로고 초기화
+document.getElementById("logoImg").src = DEFAULT_LOGO;
+document.getElementById("bgButterfly").src = DEFAULT_LOGO;
+
+// Firebase 실시간 동기화
+onValue(ref(db, "members"), (snapshot) => {
+  members = snapshot.val() || {};
+
+  // 멤버가 없으면 기본 멤버 추가
+  if (Object.keys(members).length === 0) {
+    const defaults = ["고기욱","김미정","김광섭","김만재"];
+    defaults.forEach(name => {
+      const newRef = push(ref(db, "members"));
+      set(newRef, { name, sessions:0, totalKm:0, avgPace:"-", streak:0, photos:{} });
+    });
+    return;
+  }
+  updateStats();
+  renderAll();
+});
+
+// 로고 변경
+onValue(ref(db, "logo"), (snapshot) => {
+  const logo = snapshot.val();
+  if (logo) {
+    document.getElementById("logoImg").src = logo;
+    document.getElementById("bgButterfly").src = logo;
+  }
+});
+
+document.getElementById("logoInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    set(ref(db, "logo"), ev.target.result);
+    showToast("로고 변경 완료! 🦋");
+  };
+  reader.readAsDataURL(file);
+});
+
+function updateStats() {
+  const arr = Object.values(members);
+  const totalKm = arr.reduce((s,m) => s + (m.totalKm||0), 0).toFixed(1);
+  const totalSessions = arr.reduce((s,m) => s + (m.sessions||0), 0);
+  document.getElementById("statMembers").textContent = arr.length;
+  document.getElementById("statKm").textContent = totalKm;
+  document.getElementById("statSessions").textContent = totalSessions;
+}
+
+function getAvatar(name, size=44) {
+  const [bg,fg] = AV_COLORS[name.charCodeAt(0) % AV_COLORS.length];
+  return `<div class="avatar" style="width:${size}px;height:${size}px;background:linear-gradient(135deg,${bg},${fg});font-size:${size*.38}px">${name[0]}</div>`;
+}
+
+function renderAll() {
+  renderLeaderboard();
+  renderAttendance();
+  renderPhotos();
+}
+
+function renderLeaderboard() {
+  const arr = Object.entries(members).map(([id,m]) => ({id,...m}));
+  arr.sort((a,b) => (b[sortBy]||0) - (a[sortBy]||0));
+  const maxKm = Math.max(...arr.map(m=>m.totalKm||0), 1);
+
+  document.getElementById("leaderboard-list").innerHTML = arr.map((m,i) => `
+    <div class="card ${i===0?'top':''}">
+      <div class="rtag" style="color:${RANK_COLORS[i]||'rgba(232,244,253,0.2)'}">${RANK_LABELS[i]||i+1}</div>
+      ${getAvatar(m.name)}
+      <div class="minfo">
+        <div class="mname">${m.name}</div>
+        <div class="mmeta">페이스 ${m.avgPace||'-'} · ${m.sessions||0}회 출석</div>
+        <div>
+          ${(m.streak||0)>0?`<span class="spill">🔥 ${m.streak}연속</span>`:''}
+          ${Object.keys(m.photos||{}).length>0?`<span class="pcnt">📸 ${Object.keys(m.photos).length}</span>`:''}
+        </div>
+        <div class="pbar"><div class="pfill" style="width:${Math.min(100,((m.totalKm||0)/maxKm)*100)}%"></div></div>
+        <div class="card-actions">
+          <button class="act-btn" onclick="openRunLog('${m.id}','${m.name}')">🏃 기록 추가</button>
+          <button class="act-btn ph" onclick="openPhotoLog('${m.id}','${m.name}')">📸 인증샷</button>
+        </div>
+      </div>
+      <div class="mkm">
+        <div class="kbig">${m.totalKm||0}</div>
+        <div class="ksm">KM</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAttendance() {
+  const arr = Object.entries(members).map(([id,m]) => ({id,...m}));
+  document.getElementById("attendance-list").innerHTML = arr.map(m => {
+    const sessions = m.sessions||0;
+    const dots = Array.from({length:Math.max(sessions,8)},(_,i) =>
+      `<div class="dot ${i<sessions?'on':''}"></div>`).join('');
+    return `
+      <div class="card">
+        ${getAvatar(m.name)}
+        <div class="minfo">
+          <div class="mname">${m.name}</div>
+          <div class="dots">${dots}<span style="font-size:11px;color:rgba(232,244,253,.35);margin-left:4px;font-weight:600">${sessions}회</span></div>
+          <div class="card-actions" style="margin-top:10px">
+            <button class="act-btn" onclick="openRunLog('${m.id}','${m.name}')">🏃 기록 추가</button>
+            <button class="act-btn ph" onclick="openPhotoLog('${m.id}','${m.name}')">📸 인증샷</button>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:18px;color:${(m.streak||0)>0?'#ff8a65':'rgba(232,244,253,.15)'}">${(m.streak||0)>0?`🔥${m.streak}`:'—'}</div>
+          <div style="font-size:10px;color:rgba(232,244,253,.28);font-weight:700">STREAK</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderPhotos() {
+  const arr = Object.entries(members).map(([id,m]) => ({id,...m}));
+  document.getElementById("photos-list").innerHTML = arr.map(m => {
+    const photos = Object.entries(m.photos||{}).map(([pid,p]) => ({pid,...p}));
+    const grid = photos.length === 0
+      ? `<div class="no-photo">아직 인증샷이 없어요 📸</div>`
+      : `<div class="photo-grid">${photos.map(p=>`
+          <div class="photo-thumb" onclick="openGallery('${m.id}','${m.name}')">
+            <img src="${p.src}" alt="${p.note||''}">
+            <div class="photo-date">${p.date||''}</div>
+          </div>`).join('')}</div>`;
+    return `
+      <div class="photo-section">
+        <div class="photo-header">
+          ${getAvatar(m.name,36)}
+          <div><div style="font-weight:900;font-size:15px">${m.name}</div>
+          <div style="font-size:11px;color:rgba(232,244,253,.35)">인증샷 ${photos.length}장</div></div>
+          <button class="act-btn ph" style="margin-left:auto" onclick="openPhotoLog('${m.id}','${m.name}')">+ 추가</button>
+        </div>
+        ${grid}
+      </div>`;
+  }).join('');
+}
+
+// Tab switching
+window.switchTab = (tab, btn) => {
+  activeTab = tab;
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  ['leaderboard','attendance','photos'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t===tab?'block':'none';
+  });
+};
+
+window.setSort = (key, btn) => {
+  sortBy = key;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  renderLeaderboard();
+};
+
+// Modals
+window.openAddMember = () => {
+  document.getElementById('input-newname').value = '';
+  document.getElementById('modal-add').classList.add('show');
+  setTimeout(()=>document.getElementById('input-newname').focus(), 100);
+};
+
+window.openRunLog = (id, name) => {
+  currentMemberId = id;
+  document.getElementById('run-modal-title').textContent = `${name} · 러닝 기록`;
+  document.getElementById('input-km').value = '';
+  document.getElementById('input-pace').value = '';
+  document.getElementById('modal-run').classList.add('show');
+  setTimeout(()=>document.getElementById('input-km').focus(), 100);
+};
+
+window.openPhotoLog = (id, name) => {
+  currentMemberId = id;
+  photoDataUrl = null;
+  document.getElementById('photo-modal-title').textContent = `📸 ${name} · 인증샷 등록`;
+  document.getElementById('input-note').value = '';
+  document.getElementById('submitPhotoBtn').disabled = true;
+  const area = document.getElementById('uploadArea');
+  const existing = area.querySelector('img.preview');
+  if (existing) existing.remove();
+  document.getElementById('uploadPlaceholder').style.display = 'block';
+  document.getElementById('modal-photo').classList.add('show');
+};
+
+window.openGallery = (id, name) => {
+  const m = members[id];
+  if (!m) return;
+  const photos = Object.entries(m.photos||{}).map(([pid,p])=>({pid,...p}));
+  document.getElementById('gallery-title').textContent = `${name}의 인증샷 (${photos.length})`;
+  document.getElementById('gallery-grid').innerHTML = photos.map(p=>`
+    <div class="gallery-item">
+      <img src="${p.src}" alt="${p.note||''}">
+      <div class="gallery-meta">
+        <div class="gallery-date">${p.date||''}</div>
+        ${p.note?`<div class="gallery-note">${p.note}</div>`:''}
+      </div>
+    </div>`).join('');
+  document.getElementById('modal-gallery').classList.add('show');
+};
+
+window.closeModal = (id) => document.getElementById(id).classList.remove('show');
+
+// Actions
+window.addMember = () => {
+  const name = document.getElementById('input-newname').value.trim();
+  if (!name) return;
+  const newRef = push(ref(db, "members"));
+  set(newRef, { name, sessions:0, totalKm:0, avgPace:"-", streak:0, photos:{} });
+  closeModal('modal-add');
+  showToast('새 멤버 합류! 🦋');
+};
+
+window.logRun = () => {
+  const km = parseFloat(document.getElementById('input-km').value);
+  if (!km || km <= 0) return;
+  const pace = document.getElementById('input-pace').value.trim();
+  const m = members[currentMemberId];
+  if (!m) return;
+  update(ref(db, `members/${currentMemberId}`), {
+    sessions: (m.sessions||0) + 1,
+    totalKm: parseFloat(((m.totalKm||0) + km).toFixed(1)),
+    avgPace: pace || m.avgPace || '-',
+    streak: (m.streak||0) + 1,
+  });
+  closeModal('modal-run');
+  showToast('기록 완료! 💨');
+};
+
+// Photo upload
+document.getElementById('photoInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    photoDataUrl = ev.target.result;
+    const area = document.getElementById('uploadArea');
+    const existing = area.querySelector('img.preview');
+    if (existing) existing.remove();
+    const img = document.createElement('img');
+    img.src = photoDataUrl;
+    img.className = 'preview';
+    area.appendChild(img);
+    document.getElementById('uploadPlaceholder').style.display = 'none';
+    document.getElementById('submitPhotoBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('uploadArea').addEventListener('click', () => {
+  document.getElementById('photoInput').click();
+});
+
+window.submitPhoto = () => {
+  if (!photoDataUrl) return;
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  const note = document.getElementById('input-note').value.trim();
+  const photoRef = push(ref(db, `members/${currentMemberId}/photos`));
+  set(photoRef, { src: photoDataUrl, note, date: dateStr });
+  closeModal('modal-photo');
+  showToast('인증샷 등록 완료! 📸');
+};
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// 키보드 Enter
+document.getElementById('input-newname').addEventListener('keydown', e => { if(e.key==='Enter') window.addMember(); });
+document.getElementById('input-km').addEventListener('keydown', e => { if(e.key==='Enter') window.logRun(); });
+
+</script>
+</body>
+</html>
