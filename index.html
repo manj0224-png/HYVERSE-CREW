@@ -7,7 +7,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="./manifest.json" />
-<meta name="theme-color" content="#7DD3FC" />
+<meta name="theme-color" content="#5A8AB5" />
 <link rel="icon" type="image/svg+xml" href="./icon.svg" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
@@ -24,55 +24,60 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  /* Brand — sky blue spectrum */
-  --brand: #7DD3FC;
-  --brand-light: #A5D7FF;
-  --brand-hover: #38BDF8;
-  --brand-deep: #0284C7;
-  --brand-darker: #0369A1;
-  --brand-bg: rgba(125,211,252,0.08);
-  --brand-bg-strong: rgba(125,211,252,0.18);
-  --brand-border: rgba(125,211,252,0.25);
+  /* Brand — Cloud Aura (Pantone 2026: Cloud Dancer + Blue Aura) */
+  --brand: #5A8AB5;
+  --brand-light: #A5C5E0;
+  --brand-hover: #4A7AA0;
+  --brand-deep: #2A4561;
+  --brand-darker: #1B2D43;
+  --brand-bg: rgba(165,197,224,0.18);
+  --brand-bg-strong: rgba(90,138,181,0.15);
+  --brand-border: rgba(90,138,181,0.25);
   /* Back-compat aliases (old code uses these names) */
-  --brand-dark: #0284C7;
-  --brand-soft: rgba(125,211,252,0.12);
-  /* Ocean depth (dark mode primary surfaces) */
-  --ocean-bg: #0A1F33;
-  --ocean-card: #0F2942;
-  /* Light mode (sky-tinted) */
-  --bg: #E8F4FD;
+  --brand-dark: #2A4561;
+  --brand-soft: rgba(165,197,224,0.18);
+  /* Cloud surfaces (deprecated --ocean-* aliases kept for compat) */
+  --cloud-bg: #F0F4F9;
+  --cloud-card: #FFFFFF;
+  --ocean-bg: #2A4561;
+  --ocean-card: #FFFFFF;
+  /* Active brand contrast (text/icon ON brand-colored bg) */
+  --on-brand: #FFFFFF;
+  /* Light mode tokens (Cloud Dancer base) */
+  --bg: #F0F4F9;
   --bg-elev: #FFFFFF;
-  --bg-muted: #DCEEFB;
-  --text: #0C4A6E;
-  --text-muted: #4A7AA0;
-  --text-soft: #7BA0C0;
-  --border: #D4EAF8;
-  --border-strong: #0C4A6E;
+  --bg-muted: #E8EFF7;
+  --text: #2A4561;
+  --text-muted: #5A8AB5;
+  --text-soft: #8AAACC;
+  --border: #D6E5F2;
+  --border-strong: #2A4561;
   --danger: #e53935;
   --warn: #f59e0b;
   --ok: #22c55e;
-  --shadow-sm: 0 1px 2px rgba(12,74,110,0.05), 0 1px 3px rgba(125,211,252,0.10);
-  --shadow-md: 0 4px 12px rgba(12,74,110,0.08), 0 2px 6px rgba(125,211,252,0.10);
-  /* Glass surfaces (subtle in light, strong in dark) */
+  --shadow-sm: 0 1px 3px rgba(90,138,181,0.08), 0 1px 2px rgba(90,138,181,0.06);
+  --shadow-md: 0 4px 12px rgba(90,138,181,0.10), 0 2px 6px rgba(90,138,181,0.08);
+  /* Glass surfaces */
   --surface-card: #FFFFFF;
-  --surface-card-border: var(--border);
-  --surface-pill: rgba(125,211,252,0.10);
+  --surface-card-border: rgba(90,138,181,0.15);
+  --surface-pill: #E8EFF7;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0A1F33;
-    --bg-elev: #0F2942;
-    --bg-muted: #14334F;
-    --text: #F1F5F9;
-    --text-muted: #94A3B8;
-    --text-soft: #64748B;
-    --border: rgba(255,255,255,0.08);
-    --border-strong: #F1F5F9;
+    --bg: #1A2433;
+    --bg-elev: #232E40;
+    --bg-muted: #2A3848;
+    --text: #E8EFF7;
+    --text-muted: #A5C5E0;
+    --text-soft: #6E8AA8;
+    --border: rgba(165,197,224,0.12);
+    --border-strong: #E8EFF7;
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.5);
     --shadow-md: 0 4px 14px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35);
-    --surface-card: linear-gradient(135deg, rgba(125,211,252,0.04) 0%, rgba(255,255,255,0.02) 100%);
-    --surface-card-border: rgba(255,255,255,0.06);
+    --surface-card: rgba(255,255,255,0.04);
+    --surface-card-border: rgba(165,197,224,0.12);
     --surface-pill: rgba(255,255,255,0.04);
+    --on-brand: #1B2D43;
   }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -84,7 +89,7 @@ body { min-height: 100vh; }
 /* Header */
 .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
 .brand { display: flex; align-items: baseline; gap: 12px; }
-.brand-mark { font-family: Impact, 'Arial Black', sans-serif; font-size: 44px; letter-spacing: -0.01em; line-height: 1; color: var(--text); font-weight: 900; }
+.brand-mark { font-family: 'Inter', sans-serif; font-size: 44px; letter-spacing: -0.02em; line-height: 1; color: var(--text); font-weight: 800; }
 .brand-accent { color: var(--brand); }
 .brand-tag { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 4px; }
 .header-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
@@ -95,11 +100,15 @@ body { min-height: 100vh; }
 .tabs { display: flex; gap: 4px; margin-bottom: 28px; padding: 4px; background: var(--surface-pill); border-radius: 99px; overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { padding: 10px 14px; background: transparent; border: none; border-radius: 99px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: background 0.18s, color 0.18s; letter-spacing: 0.05em; text-transform: uppercase; }
-.tab:hover { color: var(--text); background: rgba(125,211,252,0.06); }
-.tab.active { color: var(--ocean-bg); background: var(--brand); font-weight: 700; }
-.tab.active:hover { background: var(--brand-light); }
+.tab:hover { color: var(--text); background: rgba(90,138,181,0.06); }
+.tab.active { color: var(--on-brand); background: var(--brand); font-weight: 700; }
+.tab.active:hover { background: var(--brand-hover); }
+@media (prefers-color-scheme: dark) {
+  .tab.active { background: var(--brand-light); color: var(--brand-darker); }
+  .tab.active:hover { background: #BFDFF5; }
+}
 .tab-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-soft); margin-right: 6px; }
-.tab.active .tab-num { color: rgba(10,31,51,0.55); }
+.tab.active .tab-num { color: rgba(27,45,67,0.55); }
 
 /* Panels */
 .panel { display: none; animation: fadeIn 0.3s ease; }
@@ -107,7 +116,7 @@ body { min-height: 100vh; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 .panel-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
-.panel-title { font-family: Impact, 'Arial Black', sans-serif; font-size: 32px; letter-spacing: 0.02em; line-height: 1; }
+.panel-title { font-family: 'Inter', sans-serif; font-size: 32px; letter-spacing: 0.02em; line-height: 1; }
 .panel-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
 
 /* Card */
@@ -115,7 +124,7 @@ body { min-height: 100vh; }
 @media (prefers-color-scheme: dark) {
   .card { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
-.card-title { font-family: Impact, 'Arial Black', sans-serif; font-size: 20px; letter-spacing: 0.02em; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card-title { font-family: 'Inter', sans-serif; font-size: 20px; letter-spacing: 0.02em; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .card-title-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-soft); font-weight: 400; letter-spacing: 0.08em; }
 
 /* Grid */
@@ -128,7 +137,7 @@ body { min-height: 100vh; }
 
 /* Stat */
 .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
-.stat-value { font-family: Impact, 'Arial Black', sans-serif; font-size: 42px; line-height: 1; margin-top: 8px; letter-spacing: -0.02em; font-weight: 900; color: var(--text); }
+.stat-value { font-family: 'Inter', sans-serif; font-size: 42px; line-height: 1; margin-top: 8px; letter-spacing: -0.02em; font-weight: 800; color: var(--text); }
 #s-total-dist, #s-best-pace { color: var(--brand); }
 .stat-unit { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); margin-left: 4px; font-weight: 500; letter-spacing: 0; }
 .stat-hint { font-size: 11px; color: var(--text-soft); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
@@ -147,7 +156,7 @@ body { min-height: 100vh; }
 @media (prefers-color-scheme: dark) {
   .input, .select, .textarea { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
 }
-.input:focus, .select:focus, .textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(125,211,252,0.18); }
+.input:focus, .select:focus, .textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(90,138,181,0.18); }
 .textarea { resize: vertical; min-height: 72px; font-family: inherit; }
 
 /* Splits (run form) */
@@ -202,7 +211,7 @@ body { min-height: 100vh; }
 .cr-table td.mono { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
 .cr-rank-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; }
 .cr-rank-row + .cr-rank-row { border-top: 1px solid var(--border); }
-.cr-rank-num { font-family: Impact, 'Arial Black', sans-serif; font-size: 24px; color: var(--text-soft); text-align: center; }
+.cr-rank-num { font-family: 'Inter', sans-serif; font-size: 24px; color: var(--text-soft); text-align: center; }
 .cr-rank-name { font-weight: 600; font-size: 13px; }
 .cr-rank-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .cr-rank-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: var(--brand-dark); }
@@ -216,8 +225,8 @@ body { min-height: 100vh; }
 }
 .btn:hover { opacity: 0.85; }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--brand); color: var(--ocean-bg); border-color: var(--brand); font-weight: 700; }
-.btn-primary:hover { background: var(--brand-light); border-color: var(--brand-light); opacity: 1; }
+.btn-primary { background: var(--brand); color: #FFFFFF; border-color: var(--brand); font-weight: 600; }
+.btn-primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); opacity: 1; }
 .btn-primary:active { transform: scale(0.98); }
 .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
 .btn-ghost:hover { background: var(--brand-bg); border-color: var(--brand-border); color: var(--brand-deep); }
@@ -247,31 +256,31 @@ body { min-height: 100vh; }
 .run-meta { font-size: 12px; color: var(--text-muted); }
 .run-stats { display: flex; gap: 14px; align-items: center; }
 .run-stat { text-align: right; }
-.run-stat .v { font-family: Impact, 'Arial Black', sans-serif; font-size: 22px; line-height: 1; }
+.run-stat .v { font-family: 'Inter', sans-serif; font-size: 22px; line-height: 1; }
 .run-stat .u { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
 .run-actions { display: flex; gap: 4px; }
 
 /* Chips / badges */
-.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; background: var(--bg-muted); color: var(--text-muted); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(125,211,252,0.06); }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; background: var(--bg-muted); color: var(--text-muted); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(90,138,181,0.06); }
 .chip.brand { background: var(--brand-bg); color: var(--brand-deep); border-color: var(--brand-border); }
 @media (prefers-color-scheme: dark) { .chip.brand { color: var(--brand); } }
-.chip.easy { background: rgba(29,158,117,0.12); color: #1d9e75; border-color: rgba(29,158,117,0.18); }
-.chip.tempo { background: rgba(239,159,39,0.12); color: #d97706; border-color: rgba(239,159,39,0.20); }
-.chip.race { background: rgba(216,90,48,0.15); color: #d85a30; border-color: rgba(216,90,48,0.22); }
-.chip.long { background: rgba(56,189,248,0.12); color: #0284C7; border-color: rgba(56,189,248,0.20); }
-.chip.interval { background: rgba(127,119,221,0.12); color: #6258c4; border-color: rgba(127,119,221,0.20); }
+.chip.easy { background: #E0F0E5; color: #2D6A4F; border-color: rgba(45,106,79,0.10); }
+.chip.tempo { background: #FCEED4; color: #8B5C13; border-color: rgba(139,92,19,0.10); }
+.chip.race { background: #FCE7E0; color: #C2552B; border-color: rgba(194,85,43,0.10); }
+.chip.long { background: #E0EBF7; color: #2A4561; border-color: rgba(42,69,97,0.10); }
+.chip.interval { background: #EBE6F7; color: #4F3D85; border-color: rgba(79,61,133,0.10); }
 @media (prefers-color-scheme: dark) {
-  .chip.easy { color: #5DCAA5; }
-  .chip.tempo { color: #FAC775; }
-  .chip.race { color: #FF8B5C; }
-  .chip.long { color: #7DD3FC; }
-  .chip.interval { color: #B4ADF0; }
+  .chip.easy { background: rgba(93,202,165,0.12); color: #5DCAA5; border-color: rgba(93,202,165,0.20); }
+  .chip.tempo { background: rgba(250,199,117,0.12); color: #FAC775; border-color: rgba(250,199,117,0.20); }
+  .chip.race { background: rgba(255,138,90,0.12); color: #FF8B5C; border-color: rgba(255,138,90,0.20); }
+  .chip.long { background: rgba(165,197,224,0.12); color: #A5C5E0; border-color: rgba(165,197,224,0.20); }
+  .chip.interval { background: rgba(180,173,240,0.12); color: #B4ADF0; border-color: rgba(180,173,240,0.20); }
 }
 
 /* Progress */
 .progress-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
 .progress-row + .progress-row { border-top: 1px solid var(--border); }
-.avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; flex-shrink: 0; border: 0.5px solid rgba(125,211,252,0.25); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; flex-shrink: 0; border: 0.5px solid rgba(90,138,181,0.25); }
 .progress-bar { height: 8px; background: var(--bg-muted); border-radius: 999px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
 .progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: right; }
@@ -285,7 +294,7 @@ body { min-height: 100vh; }
 /* Heart rate zone */
 .zones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
 .zone { padding: 8px; text-align: center; border-radius: 6px; font-size: 11px; }
-.zone .zn { font-family: Impact, 'Arial Black', sans-serif; font-size: 16px; display: block; line-height: 1; }
+.zone .zn { font-family: 'Inter', sans-serif; font-size: 16px; display: block; line-height: 1; }
 .z1 { background: rgba(148,163,184,0.15); color: #64748b; }
 .z2 { background: rgba(34,197,94,0.15); color: #16a34a; }
 .z3 { background: rgba(245,158,11,0.18); color: #d97706; }
@@ -301,7 +310,7 @@ body { min-height: 100vh; }
 /* Schedule/Race card */
 .sched-card, .race-card { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
 .sched-card + .sched-card, .race-card + .race-card { margin-top: 10px; }
-.dday { font-family: Impact, 'Arial Black', sans-serif; font-size: 28px; line-height: 1; padding: 6px 10px; border-radius: 8px; background: var(--bg-muted); color: var(--text); min-width: 56px; text-align: center; }
+.dday { font-family: 'Inter', sans-serif; font-size: 28px; line-height: 1; padding: 6px 10px; border-radius: 8px; background: var(--bg-muted); color: var(--text); min-width: 56px; text-align: center; }
 .dday.soon { background: var(--danger); color: #fff; }
 .dday.far { background: rgba(34,197,94,0.18); color: #16a34a; }
 .dday.done { background: var(--bg-muted); color: var(--text-soft); }
@@ -316,7 +325,7 @@ body { min-height: 100vh; }
 .modal-backdrop.active { display: flex; animation: fadeIn 0.2s; }
 .modal { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-md); }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-.modal-title { font-family: Impact, 'Arial Black', sans-serif; font-size: 24px; letter-spacing: 0.02em; }
+.modal-title { font-family: 'Inter', sans-serif; font-size: 24px; letter-spacing: 0.02em; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
 /* Member list */
@@ -332,9 +341,9 @@ body { min-height: 100vh; }
 /* Rank list */
 .rank-row { display: grid; grid-template-columns: 32px auto 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
 .rank-row + .rank-row { border-top: 1px solid var(--border); }
-.rank-num { font-family: Impact, 'Arial Black', sans-serif; font-size: 24px; color: var(--text-soft); text-align: center; }
+.rank-num { font-family: 'Inter', sans-serif; font-size: 24px; color: var(--text-soft); text-align: center; }
 .rank-row:nth-child(1) .rank-num { color: var(--brand); }
-.rank-val { font-family: Impact, 'Arial Black', sans-serif; font-size: 22px; line-height: 1; }
+.rank-val { font-family: 'Inter', sans-serif; font-size: 22px; line-height: 1; }
 .rank-val-u { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* Chart container */
@@ -344,16 +353,16 @@ body { min-height: 100vh; }
 .report-view { background: #fff; color: #111; padding: 32px; border-radius: 12px; font-family: 'Inter', sans-serif; }
 @media (prefers-color-scheme: dark) { .report-view { background: #f8f8f4; } }
 .report-header { border-bottom: 3px solid #111; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
-.report-brand { font-family: Impact, 'Arial Black', sans-serif; font-size: 36px; line-height: 1; }
+.report-brand { font-family: 'Inter', sans-serif; font-size: 36px; line-height: 1; }
 .report-brand .a { color: var(--brand); }
 .report-period { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #666; text-align: right; }
-.report-period .big { font-family: Impact, 'Arial Black', sans-serif; font-size: 28px; color: #111; display: block; margin-top: 4px; }
+.report-period .big { font-family: 'Inter', sans-serif; font-size: 28px; color: #111; display: block; margin-top: 4px; }
 .report-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
 .report-stat { padding: 14px; background: #f4f4ef; border-radius: 8px; }
 .report-stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
-.report-stat-val { font-family: Impact, 'Arial Black', sans-serif; font-size: 34px; line-height: 1; margin-top: 4px; color: #111; }
+.report-stat-val { font-family: 'Inter', sans-serif; font-size: 34px; line-height: 1; margin-top: 4px; color: #111; }
 .report-section { margin-bottom: 20px; }
-.report-section-title { font-family: Impact, 'Arial Black', sans-serif; font-size: 20px; margin-bottom: 10px; letter-spacing: 0.02em; color: #111; }
+.report-section-title { font-family: 'Inter', sans-serif; font-size: 20px; margin-bottom: 10px; letter-spacing: 0.02em; color: #111; }
 .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .report-table th { text-align: left; padding: 8px; background: #f4f4ef; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; }
 .report-table td { padding: 8px; border-bottom: 1px solid #e8e6de; color: #111; }
@@ -406,7 +415,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
 /* Boot loader (Supabase fetch in progress) */
 #boot-loader { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.3s; }
 #boot-loader.gone { opacity: 0; pointer-events: none; }
-#boot-loader .bl-brand { font-family: Impact, 'Arial Black', sans-serif; font-size: 48px; letter-spacing: 0.04em; line-height: 1; color: var(--text); }
+#boot-loader .bl-brand { font-family: 'Inter', sans-serif; font-size: 48px; letter-spacing: 0.04em; line-height: 1; color: var(--text); }
 #boot-loader .bl-brand span { color: var(--brand); }
 #boot-loader .bl-msg { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); margin-top: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
 #boot-loader .bl-spin { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; margin: 14px auto 0; animation: bl-spin 0.8s linear infinite; }
@@ -1171,7 +1180,7 @@ function setupTypeUI(prefix) {
   updateTypeHelper(prefix);
 }
 
-const AVATAR_COLORS = ['#7DD3FC','#5DCAA5','#FAC775','#FF8B5C','#B4ADF0','#A5D7FF','#6FB3D2','#C4B5FD','#93C5FD','#38BDF8'];
+const AVATAR_COLORS = ['#5A8AB5','#5DCAA5','#FAC775','#FF8B5C','#B4ADF0','#A5C5E0','#7BA3C7','#C4B5FD','#93B5D2','#6FB3D2'];
 const avatarColor = (name) => { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return AVATAR_COLORS[h % AVATAR_COLORS.length]; };
 const avatarHtml = name => `<div class="avatar" style="background:${avatarColor(name)}">${(name||'?').slice(0,1)}</div>`;
 
@@ -1713,12 +1722,12 @@ function openSplitsView(id) {
         datasets: [{
           label: '구간 페이스',
           data: r.splits.map(s => s.paceMin),
-          borderColor: '#7DD3FC',
-          backgroundColor: 'rgba(125,211,252,0.18)',
+          borderColor: '#5A8AB5',
+          backgroundColor: 'rgba(90,138,181,0.18)',
           tension: 0.25,
           fill: true,
           pointRadius: 4,
-          pointBackgroundColor: '#7DD3FC',
+          pointBackgroundColor: '#5A8AB5',
         }, {
           label: '평균 페이스',
           data: r.splits.map(() => avgPace),
@@ -1767,7 +1776,7 @@ function renderAnalysis() {
     type: 'line',
     data: {
       labels: sorted.map(r => r.date.slice(5)),
-      datasets: [{ label: '페이스 (분/km)', data: sorted.map(r => r.pace), borderColor: '#7DD3FC', backgroundColor: 'rgba(125,211,252,0.15)', tension: 0.3, fill: true, pointRadius: 5, pointHoverRadius: 7 }]
+      datasets: [{ label: '페이스 (분/km)', data: sorted.map(r => r.pace), borderColor: '#5A8AB5', backgroundColor: 'rgba(90,138,181,0.15)', tension: 0.3, fill: true, pointRadius: 5, pointHoverRadius: 7 }]
     },
     options: { ...common, scales: { ...common.scales, y: { ...common.scales.y, reverse: true, title: { display: true, text: '분/km (낮을수록 빠름)', color: textColor } } } }
   });
@@ -1789,7 +1798,7 @@ function renderAnalysis() {
   const wData = wLabels.map(k => weatherMap[k].reduce((a,b)=>a+b,0)/weatherMap[k].length);
   charts.weather = new Chart($('#chart-weather'), {
     type: 'bar',
-    data: { labels: wLabels.map(w => `${weatherEmoji(w)} ${w}`), datasets: [{ label: '평균 페이스', data: wData, backgroundColor: '#7DD3FC', borderRadius: 6 }] },
+    data: { labels: wLabels.map(w => `${weatherEmoji(w)} ${w}`), datasets: [{ label: '평균 페이스', data: wData, backgroundColor: '#5A8AB5', borderRadius: 6 }] },
     options: { ...common, scales: { ...common.scales, y: { ...common.scales.y, reverse: true } } }
   });
 
@@ -1875,7 +1884,7 @@ function renderSplitsAnalysis() {
       data: {
         labels: r.splits.map(s => `${fmtKm(s.to)}km`),
         datasets: [
-          { label: '구간 페이스', data: r.splits.map(s => s.paceMin), borderColor: '#7DD3FC', backgroundColor: 'rgba(125,211,252,0.18)', tension: 0.25, fill: true, pointRadius: 4 },
+          { label: '구간 페이스', data: r.splits.map(s => s.paceMin), borderColor: '#5A8AB5', backgroundColor: 'rgba(90,138,181,0.18)', tension: 0.25, fill: true, pointRadius: 4 },
           { label: '평균 페이스', data: r.splits.map(() => r.pace), borderColor: 'rgba(148,163,184,0.7)', borderDash: [4,4], pointRadius: 0, fill: false }
         ]
       },
@@ -2201,7 +2210,7 @@ function generateReport(name, month) {
             ${goal.dist ? `<div style="height:10px; background:#e5e3db; border-radius:999px; overflow:hidden;">
               <div style="height:100%; width:${goalPct}%; background:${goalPct>=100?'#22c55e':goalPct>=70?'#eab308':'#f97316'}; border-radius:999px;"></div>
             </div>
-            <div style="text-align:right; font-family:Impact,'Arial Black',sans-serif; font-size:24px; margin-top:6px;">${goalPct}<span style="font-size:12px; font-family:'Inter',sans-serif; color:#666;">%</span></div>` : ''}
+            <div style="text-align:right; font-family:'Inter',sans-serif; font-size:24px; margin-top:6px;">${goalPct}<span style="font-size:12px; font-family:'Inter',sans-serif; color:#666;">%</span></div>` : ''}
           </div>
         </div>` : ''}
 
@@ -2209,9 +2218,9 @@ function generateReport(name, month) {
           <div class="report-section">
             <div class="report-section-title">Highlights</div>
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:12px; color:#111;">
-              ${bestRun ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Best Pace</div><div style="font-family:Impact,'Arial Black',sans-serif; font-size:22px; margin:4px 0;">${bestRun.paceStr}/KM</div><div style="color:#666;">${fmtDate(bestRun.date)} · ${bestRun.dist}km</div></div>` : ''}
-              ${longRun ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Longest Run</div><div style="font-family:Impact,'Arial Black',sans-serif; font-size:22px; margin:4px 0;">${longRun.dist} KM</div><div style="color:#666;">${fmtDate(longRun.date)} · ${longRun.paceStr}</div></div>` : ''}
-              ${avgHr ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Avg HR</div><div style="font-family:Impact,'Arial Black',sans-serif; font-size:22px; margin:4px 0;">${avgHr} BPM</div><div style="color:#666;">${hrs.length}회 측정</div></div>` : `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Run Types</div><div style="font-family:Impact,'Arial Black',sans-serif; font-size:18px; margin:4px 0;">${Object.keys(typeCount).length} 종</div><div style="color:#666;">${Object.entries(typeCount).map(([k,v])=>`${typeLabel(k)} ${v}`).join(' · ')}</div></div>`}
+              ${bestRun ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Best Pace</div><div style="font-family:'Inter',sans-serif; font-size:22px; margin:4px 0;">${bestRun.paceStr}/KM</div><div style="color:#666;">${fmtDate(bestRun.date)} · ${bestRun.dist}km</div></div>` : ''}
+              ${longRun ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Longest Run</div><div style="font-family:'Inter',sans-serif; font-size:22px; margin:4px 0;">${longRun.dist} KM</div><div style="color:#666;">${fmtDate(longRun.date)} · ${longRun.paceStr}</div></div>` : ''}
+              ${avgHr ? `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Avg HR</div><div style="font-family:'Inter',sans-serif; font-size:22px; margin:4px 0;">${avgHr} BPM</div><div style="color:#666;">${hrs.length}회 측정</div></div>` : `<div style="padding:10px; border:1px solid #e8e6de; border-radius:8px;"><div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:#666; text-transform:uppercase; letter-spacing:0.08em;">Run Types</div><div style="font-family:'Inter',sans-serif; font-size:18px; margin:4px 0;">${Object.keys(typeCount).length} 종</div><div style="color:#666;">${Object.entries(typeCount).map(([k,v])=>`${typeLabel(k)} ${v}`).join(' · ')}</div></div>`}
             </div>
           </div>
 
@@ -2243,7 +2252,7 @@ function generateReport(name, month) {
         type: 'line',
         data: {
           labels: myRuns.map(r => r.date.slice(5)),
-          datasets: [{ label: '페이스 (분/km)', data: myRuns.map(r => r.pace), borderColor: '#7DD3FC', backgroundColor: 'rgba(125,211,252,0.2)', tension: 0.3, fill: true, pointRadius: 4 }]
+          datasets: [{ label: '페이스 (분/km)', data: myRuns.map(r => r.pace), borderColor: '#5A8AB5', backgroundColor: 'rgba(90,138,181,0.2)', tension: 0.3, fill: true, pointRadius: 4 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
@@ -2402,7 +2411,7 @@ function renderCrewReportFor(month) {
       const labels = Object.keys(typeCount).map(typeLabel);
       const data = Object.values(typeCount);
       const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#888';
-      const palette = ['#7DD3FC', '#f59e0b', '#6366f1', '#ec4899', '#dc2626'];
+      const palette = ['#5A8AB5', '#5DCAA5', '#FAC775', '#FF8B5C', '#B4ADF0'];
       crTypeChart = new Chart(cv, {
         type: 'doughnut',
         data: { labels, datasets: [{ data, backgroundColor: palette, borderWidth: 2, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-elev').trim() || '#fff' }] },
@@ -2470,7 +2479,7 @@ async function init() {
     const bl = document.getElementById('boot-loader');
     if (bl) {
       bl.innerHTML = `<div style="text-align:center; padding:24px; max-width:320px;">
-        <div style="font-family:Impact,'Arial Black',sans-serif; font-size:36px; color:#dc2626; margin-bottom:8px;">CONNECTION ERROR</div>
+        <div style="font-family:'Inter',sans-serif; font-size:36px; color:#dc2626; margin-bottom:8px;">CONNECTION ERROR</div>
         <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); margin-bottom:16px; word-break:break-word;">${err?.message || '데이터를 불러올 수 없습니다'}</div>
         <button onclick="location.reload()" style="padding:10px 20px; background:var(--text); color:var(--bg); border:none; border-radius:8px; cursor:pointer; font-weight:600;">새로고침</button>
       </div>`;
