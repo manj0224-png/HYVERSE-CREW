@@ -1,7 +1,7 @@
 // HYVERSE Running Crew - Service Worker
 // Cache-first with network fallback. Bump CACHE_VERSION to invalidate.
 
-const CACHE_VERSION = 'hyverse-v7';
+const CACHE_VERSION = 'hyverse-v8';
 const CACHE_ASSETS = [
   './',
   './index.html',

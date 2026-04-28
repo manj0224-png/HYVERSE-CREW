@@ -22,6 +22,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
   /* Brand — Neon Energy (electric lime on charcoal) */
@@ -263,10 +265,28 @@ body { min-height: 100vh; }
 /* Progress */
 .progress-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
 .progress-row + .progress-row { border-top: 1px solid var(--border); }
+.progress-row.with-actions { grid-template-columns: 80px 1fr auto auto; }
+.goal-actions { display: inline-flex; gap: 4px; margin-left: 6px; }
+.goal-actions .btn-icon { width: 26px; height: 26px; padding: 4px; font-size: 13px; }
 .avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; font-family: 'Inter', sans-serif; flex-shrink: 0; border: 0.5px solid rgba(181,227,0,0.25); }
 .progress-bar { height: 8px; background: var(--bg-muted); border-radius: 999px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
 .progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: right; }
+
+/* Calendar add button (Google) */
+.btn-cal { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background: var(--brand-bg); border: 1px solid var(--brand-border); color: var(--brand); font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em; }
+.btn-cal:hover { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+.btn-cal.added { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); color: #22c55e; cursor: default; }
+.btn-cal.added:hover { background: rgba(34,197,94,0.12); color: #22c55e; }
+.btn-cal:disabled { opacity: 0.6; cursor: wait; }
+.btn-cal .spin { display: inline-block; width: 10px; height: 10px; border: 1.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: btn-spin 0.7s linear infinite; }
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+
+/* Google Calendar header pill */
+.gcal-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em; }
+.gcal-pill:hover { color: var(--text); border-color: var(--brand-border); }
+.gcal-pill.connected { background: var(--brand-bg); border-color: var(--brand-border); color: var(--brand); }
+.gcal-pill.connected:hover { color: var(--brand-light); }
 
 /* Filter bar */
 .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -595,7 +615,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; 
       </div>
       <div class="brand-tag">Running Crew · Seoul</div>
     </div>
-    <div class="header-meta"><span class="dot"></span>TOTAL <span id="header-total" style="color:var(--brand);font-weight:700;">0</span> KM</div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="gcal-pill" id="gcal-btn" type="button" title="Google Calendar 연동"><span id="gcal-btn-icon">📅</span><span id="gcal-btn-text">구글 연결</span></button>
+      <div class="header-meta"><span class="dot"></span>TOTAL <span id="header-total" style="color:var(--brand);font-weight:700;">0</span> KM</div>
+    </div>
   </header>
 
   <nav class="tabs" id="tabs">
@@ -1374,19 +1397,22 @@ function renderUpcoming() {
       : `<span class="chip brand">🏃 정기런</span>`;
     const meta = isRace ? fmtDate(it.date) : `${fmtDate(it.date)} · ${it.time||''}`;
     const loc = it.loc || '장소 미정';
+    const calBtn = calBtnHtml(isRace ? 'race' : 'sched', it);
     return `<div class="upcoming-card" data-tab-jump="${isRace ? 'races' : 'schedule'}">
       <div class="dday ${cls}">${label}</div>
       <div class="upcoming-name">${it.name}</div>
       <div class="upcoming-meta">${meta}</div>
       <div class="upcoming-loc">📍 ${loc}</div>
-      <div>${typeBadge}</div>
+      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">${typeBadge}${calBtn}</div>
     </div>`;
   }).join('');
 
-  el.querySelectorAll('[data-tab-jump]').forEach(c => c.addEventListener('click', () => {
+  el.querySelectorAll('[data-tab-jump]').forEach(c => c.addEventListener('click', (e) => {
+    if (e.target.closest('.btn-cal')) return; // calendar 버튼 클릭 시 점프 안함
     const t = document.querySelector(`.tab[data-tab="${c.dataset.tabJump}"]`);
     if (t) t.click();
   }));
+  el.querySelectorAll('.btn-cal').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); handleCalButtonClick(b); }));
 }
 
 function renderDashboard() {
@@ -1931,6 +1957,20 @@ $('#rank-filter').addEventListener('click', e => {
 });
 
 /* ---------- 10. GOALS ---------- */
+let editingGoalId = null;
+
+function resetGoalForm() {
+  editingGoalId = null;
+  $('#goal-form').reset();
+  $('#g-month').value = new Date().toISOString().slice(0,7);
+  $('#g-name').disabled = false;
+  $('#g-month').disabled = false;
+  const submitBtn = $('#goal-form button[type="submit"]');
+  if (submitBtn) submitBtn.textContent = '목표 저장';
+  const cancelBtn = $('#goal-form-cancel');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
 $('#goal-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('#g-name').value;
@@ -1938,14 +1978,71 @@ $('#goal-form').addEventListener('submit', async e => {
   if (!name || !month) { toast('필수값 확인'); return; }
   const dist = $('#g-dist').value ? parseInt($('#g-dist').value) : null;
   const pace = $('#g-pace').value.trim() || null;
-  const { data, error } = await sb.from('goals').upsert({ name, month, dist, pace }, { onConflict: 'name,month' }).select().single();
-  if (error) return dbErr('목표 저장 실패', error);
-  const idx = goals.findIndex(g => g.name === name && g.month === month);
-  if (idx >= 0) goals[idx] = data; else goals.push(data);
-  e.target.reset();
-  toast('목표 저장');
+
+  if (editingGoalId) {
+    const { data, error } = await sb.from('goals').update({ dist, pace }).eq('id', editingGoalId).select().single();
+    if (error) return dbErr('목표 수정 실패', error);
+    const idx = goals.findIndex(g => g.id === editingGoalId);
+    if (idx >= 0) goals[idx] = data;
+    toast('목표 수정됨');
+  } else {
+    const { data, error } = await sb.from('goals').upsert({ name, month, dist, pace }, { onConflict: 'name,month' }).select().single();
+    if (error) return dbErr('목표 저장 실패', error);
+    const idx = goals.findIndex(g => g.name === name && g.month === month);
+    if (idx >= 0) goals[idx] = data; else goals.push(data);
+    toast('목표 저장');
+  }
+  resetGoalForm();
   renderGoals();
 });
+
+function startEditGoal(id) {
+  const g = goals.find(x => x.id === id);
+  if (!g) return;
+  editingGoalId = id;
+  $('#g-name').value = g.name;
+  $('#g-month').value = g.month;
+  $('#g-dist').value = g.dist || '';
+  $('#g-pace').value = g.pace || '';
+  $('#g-name').disabled = true;
+  $('#g-month').disabled = true;
+  const submitBtn = $('#goal-form button[type="submit"]');
+  if (submitBtn) submitBtn.textContent = '수정 저장';
+  let cancelBtn = $('#goal-form-cancel');
+  if (!cancelBtn) {
+    cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.id = 'goal-form-cancel';
+    cancelBtn.className = 'btn btn-ghost';
+    cancelBtn.style.marginTop = '6px';
+    cancelBtn.textContent = '수정 취소';
+    cancelBtn.onclick = () => { resetGoalForm(); };
+    submitBtn.parentElement.appendChild(cancelBtn);
+  } else {
+    cancelBtn.style.display = '';
+  }
+  $('#g-dist').focus();
+  $('#g-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function deleteGoal(id) {
+  const g = goals.find(x => x.id === id);
+  if (!g) return;
+  const ok = await confirmModal({
+    title: '목표 삭제',
+    body: `<strong>${g.name}</strong>님의 <strong>${g.month}</strong> 목표를 삭제합니다.<br><br>이 작업은 되돌릴 수 없습니다.`,
+    confirmText: '삭제',
+    danger: true,
+  });
+  if (!ok) return;
+  const { error } = await sb.from('goals').delete().eq('id', id);
+  if (error) return dbErr('목표 삭제 실패', error);
+  goals = goals.filter(x => x.id !== id);
+  if (editingGoalId === id) resetGoalForm();
+  toast('목표 삭제됨');
+  renderGoals();
+  renderDashboard();
+}
 
 function renderGoals() {
   const el = $('#goal-list');
@@ -1955,12 +2052,18 @@ function renderGoals() {
     const done = runs.filter(r => r.name === g.name && r.date.startsWith(g.month)).reduce((a,r)=>a+r.dist,0);
     const pct = g.dist ? Math.min(100, (done/g.dist)*100) : 0;
     const color = pct >= 100 ? 'var(--ok)' : pct >= 70 ? '#eab308' : '#f97316';
-    return `<div class="progress-row">
+    return `<div class="progress-row with-actions">
       <div class="row-flex">${avatarHtml(g.name)}<div><div style="font-weight:600; font-size:13px;">${g.name}</div><div class="mono" style="font-size:10px; color:var(--text-muted);">${g.month} · ${done.toFixed(1)}/${g.dist||'—'}km${g.pace?` · ${g.pace}/km`:''}</div></div></div>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${color}"></div></div>
       <div class="progress-pct">${pct.toFixed(0)}%</div>
+      <div class="goal-actions">
+        <button class="btn-icon" data-edit-goal="${g.id}" title="수정">✎</button>
+        <button class="btn-icon danger" data-del-goal="${g.id}" title="삭제">×</button>
+      </div>
     </div>`;
   }).join('');
+  el.querySelectorAll('[data-edit-goal]').forEach(b => b.addEventListener('click', () => startEditGoal(+b.dataset.editGoal)));
+  el.querySelectorAll('[data-del-goal]').forEach(b => b.addEventListener('click', () => deleteGoal(+b.dataset.delGoal)));
 }
 
 /* ---------- 11. SCHEDULE ---------- */
@@ -1996,6 +2099,7 @@ function renderSchedule() {
         <div class="t">${s.name}</div>
         <div class="m">${fmtDate(s.date)} ${s.time} · ${s.loc||'장소 미정'} ${s.dist?`· ${s.dist}`:''}</div>
         <div>${(s.attendees||[]).map(a=>`<span class="attendee-pill">${a}</span>`).join('')}</div>
+        <div style="margin-top:6px;">${calBtnHtml('sched', s)}</div>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
         ${members.map(m => {
@@ -2016,6 +2120,7 @@ function renderSchedule() {
     s.attendees = newAtt;
     renderSchedule();
   }));
+  el.querySelectorAll('.btn-cal').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); handleCalButtonClick(b); }));
 }
 
 /* ---------- 12. RACES ---------- */
@@ -2050,10 +2155,12 @@ function renderRaces() {
       <div class="sched-info">
         <div class="t">${r.name} <span class="chip ${catCls}">${r.cat}</span></div>
         <div class="m">${fmtDate(r.date)} · ${r.loc||'장소 미정'}${r.goal?` · 목표 ${r.goal}`:''}</div>
+        <div style="margin-top:6px;">${calBtnHtml('race', r)}</div>
       </div>
       <div></div>
     </div>`;
   }).join('');
+  el.querySelectorAll('.btn-cal').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); handleCalButtonClick(b); }));
 }
 
 /* ---------- 13. MEMBERS ---------- */
@@ -2418,6 +2525,240 @@ function renderCrewReportFor(month) {
 
 $('#cr-month').addEventListener('change', () => renderCrewReportFor($('#cr-month').value));
 
+/* ---------- 14c. GOOGLE CALENDAR ---------- */
+const GOOGLE_CLIENT_ID = '174870855474-7v7524k5tm50qnj3bqk9blskf5qkgfha.apps.googleusercontent.com';
+const GOOGLE_API_KEY = 'AIzaSyAfdZsxeZUYOtRKd-vrdonb8KfE2nwy0mU';
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+const GOOGLE_DISCOVERY = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+const GCAL_TOKEN_KEY = 'hv_gcal_token';
+
+let gapiInited = false;
+let gisInited = false;
+let gTokenClient = null;
+let gAccessToken = null;
+let gTokenExpiry = 0;
+
+function gcalLoadToken() {
+  try {
+    const raw = localStorage.getItem(GCAL_TOKEN_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    if (obj && obj.access_token && obj.expiry > Date.now() + 30000) {
+      gAccessToken = obj.access_token;
+      gTokenExpiry = obj.expiry;
+    } else {
+      localStorage.removeItem(GCAL_TOKEN_KEY);
+    }
+  } catch (e) {}
+}
+function gcalSaveToken(tok) {
+  const expiry = Date.now() + (tok.expires_in || 3600) * 1000;
+  gAccessToken = tok.access_token;
+  gTokenExpiry = expiry;
+  localStorage.setItem(GCAL_TOKEN_KEY, JSON.stringify({ access_token: tok.access_token, expiry }));
+}
+function gcalClearToken() {
+  gAccessToken = null;
+  gTokenExpiry = 0;
+  localStorage.removeItem(GCAL_TOKEN_KEY);
+}
+function gcalConnected() {
+  return !!gAccessToken && Date.now() < gTokenExpiry - 30000;
+}
+
+function gcalUpdateUI() {
+  const btn = document.getElementById('gcal-btn');
+  if (!btn) return;
+  const icon = document.getElementById('gcal-btn-icon');
+  const text = document.getElementById('gcal-btn-text');
+  if (gcalConnected()) {
+    btn.classList.add('connected');
+    icon.textContent = '✓';
+    text.textContent = '구글 연동됨';
+    btn.title = 'Google Calendar 연결 해제';
+  } else {
+    btn.classList.remove('connected');
+    icon.textContent = '📅';
+    text.textContent = '구글 연결';
+    btn.title = 'Google Calendar 연동';
+  }
+  // Refresh calendar buttons text states (without full re-render unless needed)
+  document.querySelectorAll('.btn-cal:not(.added)').forEach(b => {
+    if (b.dataset.busy === '1') return;
+    b.innerHTML = `📅 캘린더 추가`;
+  });
+}
+
+function initializeGapiClient() {
+  if (!window.gapi) return;
+  gapi.load('client', async () => {
+    try {
+      await gapi.client.init({ apiKey: GOOGLE_API_KEY, discoveryDocs: [GOOGLE_DISCOVERY] });
+      gapiInited = true;
+      if (gAccessToken) gapi.client.setToken({ access_token: gAccessToken });
+    } catch (err) {
+      console.warn('[GCal] gapi init failed:', err);
+    }
+  });
+}
+
+function initializeTokenClient() {
+  if (!window.google || !google.accounts || !google.accounts.oauth2) return;
+  gTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: GOOGLE_SCOPES,
+    callback: (resp) => {
+      if (resp.error) {
+        console.warn('[GCal] token error:', resp);
+        toast('구글 인증이 취소되었거나 실패했습니다');
+        return;
+      }
+      gcalSaveToken(resp);
+      if (gapiInited) gapi.client.setToken({ access_token: resp.access_token });
+      gcalUpdateUI();
+      toast('구글 캘린더 연동됨');
+      // Process pending action if any
+      if (gPendingAction) { const fn = gPendingAction; gPendingAction = null; fn(); }
+    },
+  });
+  gisInited = true;
+}
+
+let gPendingAction = null;
+function gcalConnect(onSuccess) {
+  if (!gisInited || !gTokenClient) {
+    toast('구글 라이브러리 로딩 중… 잠시 후 다시 시도해주세요');
+    return;
+  }
+  if (gcalConnected()) { if (onSuccess) onSuccess(); return; }
+  gPendingAction = onSuccess || null;
+  // 첫 연결은 prompt='consent', 재연결은 ''
+  const prompt = localStorage.getItem(GCAL_TOKEN_KEY) ? '' : 'consent';
+  try {
+    gTokenClient.requestAccessToken({ prompt });
+  } catch (err) {
+    console.warn('[GCal] request token failed:', err);
+    toast('구글 연결 실패: ' + (err?.message || ''));
+  }
+}
+function gcalDisconnect() {
+  if (gAccessToken && window.google?.accounts?.oauth2) {
+    try { google.accounts.oauth2.revoke(gAccessToken, () => {}); } catch (e) {}
+  }
+  gcalClearToken();
+  if (gapiInited && gapi.client) gapi.client.setToken(null);
+  gcalUpdateUI();
+  toast('구글 연동 해제됨');
+}
+
+async function addToGoogleCalendar(eventData) {
+  if (!gcalConnected() || !gapiInited) throw new Error('not_connected');
+  const body = {
+    summary: eventData.summary,
+    description: eventData.description || '',
+    location: eventData.location || '',
+    start: { dateTime: eventData.startDateTime, timeZone: 'Asia/Seoul' },
+    end: { dateTime: eventData.endDateTime, timeZone: 'Asia/Seoul' },
+  };
+  const res = await gapi.client.calendar.events.insert({ calendarId: 'primary', resource: body });
+  return res.result;
+}
+
+// Build event payloads
+function scheduleToEvent(s) {
+  const time = s.time && /^\d{2}:\d{2}/.test(s.time) ? s.time.slice(0,5) : '07:00';
+  const start = `${s.date}T${time}:00`;
+  const [hh, mm] = time.split(':').map(Number);
+  const endH = String((hh + 2) % 24).padStart(2, '0');
+  const end = `${s.date}T${endH}:${String(mm).padStart(2,'0')}:00`;
+  return {
+    summary: `[HYVERSE] ${s.name}`,
+    description: `장소: ${s.loc || '미정'}\n거리: ${s.dist || '미정'}\n\n📍 HYVERSE 러닝크루`,
+    location: s.loc || '',
+    startDateTime: start,
+    endDateTime: end,
+  };
+}
+function raceToEvent(r) {
+  return {
+    summary: `[HYVERSE 대회] ${r.name}`,
+    description: `종목: ${r.cat || ''}\n목표 기록: ${r.goal || '—'}\n\n🏃 HYVERSE 러닝크루`,
+    location: r.loc || '',
+    startDateTime: `${r.date}T09:00:00`,
+    endDateTime: `${r.date}T12:00:00`,
+  };
+}
+
+async function persistEventId(table, id, eventId) {
+  const { error } = await sb.from(table).update({ google_event_id: eventId }).eq('id', id);
+  if (error) {
+    console.warn(`[GCal] save event id failed (${table})`, error);
+    // 대체로 컬럼 미존재 가능성 — 사용자에게 SQL 안내
+    if (error.message && /google_event_id/.test(error.message)) {
+      toast('Supabase에 google_event_id 컬럼이 없습니다 (SQL 실행 필요)');
+    }
+  }
+  return !error;
+}
+
+// 공통 핸들러: data-cal-kind / data-cal-id 버튼 처리
+async function handleCalButtonClick(btn) {
+  if (btn.classList.contains('added') || btn.dataset.busy === '1') return;
+  const kind = btn.dataset.calKind; // 'sched' | 'race'
+  const id = +btn.dataset.calId;
+  const item = kind === 'sched' ? schedules.find(x => x.id === id) : races.find(x => x.id === id);
+  if (!item) return;
+  if (item.google_event_id) {
+    btn.classList.add('added');
+    btn.innerHTML = '✓ 추가됨';
+    return;
+  }
+  const run = async () => {
+    btn.dataset.busy = '1';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> 추가 중…';
+    try {
+      const eventData = kind === 'sched' ? scheduleToEvent(item) : raceToEvent(item);
+      const ev = await addToGoogleCalendar(eventData);
+      const evId = ev?.id;
+      if (evId) {
+        item.google_event_id = evId;
+        await persistEventId(kind === 'sched' ? 'schedules' : 'races', id, evId);
+      }
+      btn.classList.add('added');
+      btn.disabled = false;
+      btn.dataset.busy = '0';
+      btn.innerHTML = '✓ 추가됨';
+      toast('구글 캘린더에 추가되었습니다');
+    } catch (err) {
+      console.error('[GCal] insert failed:', err);
+      btn.disabled = false;
+      btn.dataset.busy = '0';
+      btn.innerHTML = '📅 캘린더 추가';
+      const msg = err?.result?.error?.message || err?.message || '';
+      if (/auth|401|invalid_token|expired/i.test(msg)) {
+        gcalClearToken();
+        gcalUpdateUI();
+        toast('구글 인증이 만료되어 다시 연결합니다');
+        gcalConnect(() => handleCalButtonClick(btn));
+      } else {
+        toast('캘린더 추가 실패: ' + (msg || '알 수 없는 오류'));
+      }
+    }
+  };
+  if (!gcalConnected()) {
+    if (!confirm('구글 캘린더에 자동 추가하려면 권한이 필요합니다.\n연결할까요?')) return;
+    gcalConnect(run);
+  } else {
+    run();
+  }
+}
+
+function calBtnHtml(kind, item) {
+  const added = !!item.google_event_id;
+  return `<button class="btn-cal ${added?'added':''}" data-cal-kind="${kind}" data-cal-id="${item.id}">${added?'✓ 추가됨':'📅 캘린더 추가'}</button>`;
+}
+
 /* ---------- 15. INIT ---------- */
 function setupRealtime() {
   sb.channel('runs-realtime')
@@ -2480,8 +2821,33 @@ async function init() {
   updateHeaderTotal();
   renderDashboard();
   setupRealtime();
+  setupGoogleCalendar();
   hideBootLoader();
 }
+
+function setupGoogleCalendar() {
+  gcalLoadToken();
+  gcalUpdateUI();
+  const btn = document.getElementById('gcal-btn');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      if (gcalConnected()) {
+        if (confirm('구글 캘린더 연결을 해제할까요?')) gcalDisconnect();
+      } else {
+        gcalConnect(() => toast('연결되었습니다. 이제 일정 카드의 "📅 캘린더 추가" 버튼을 눌러주세요'));
+      }
+    });
+  }
+  // gapi/gis 라이브러리는 async load — 폴링으로 초기화
+  let tries = 0;
+  const t = setInterval(() => {
+    tries++;
+    if (window.gapi && !gapiInited) initializeGapiClient();
+    if (window.google?.accounts?.oauth2 && !gisInited) initializeTokenClient();
+    if ((gapiInited && gisInited) || tries > 60) clearInterval(t);
+  }, 250);
+}
+
 init();
 </script>
 
