@@ -287,6 +287,8 @@ body { min-height: 100vh; }
 .gcal-pill:hover { color: var(--text); border-color: var(--brand-border); }
 .gcal-pill.connected { background: var(--brand-bg); border-color: var(--brand-border); color: var(--brand); }
 .gcal-pill.connected:hover { color: var(--brand-light); }
+.gcal-pill.needs-reconnect { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.35); color: var(--warn); }
+.gcal-pill.needs-reconnect:hover { color: #fbbf24; border-color: rgba(245,158,11,0.55); }
 
 /* Filter bar */
 .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -2537,6 +2539,11 @@ let gisInited = false;
 let gTokenClient = null;
 let gAccessToken = null;
 let gTokenExpiry = 0;
+// Auto-refresh state
+let gNeedsReconnect = false;
+let gRefreshTimer = null;
+let gPendingRefresh = null; // { resolve, reject } — silent refresh in-flight
+let gRefreshing = false;
 
 function gcalLoadToken() {
   try {
@@ -2546,6 +2553,7 @@ function gcalLoadToken() {
     if (obj && obj.access_token && obj.expiry > Date.now() + 30000) {
       gAccessToken = obj.access_token;
       gTokenExpiry = obj.expiry;
+      gcalScheduleRefresh();
     } else {
       localStorage.removeItem(GCAL_TOKEN_KEY);
     }
@@ -2560,10 +2568,61 @@ function gcalSaveToken(tok) {
 function gcalClearToken() {
   gAccessToken = null;
   gTokenExpiry = 0;
+  gNeedsReconnect = false;
+  if (gRefreshTimer) { clearTimeout(gRefreshTimer); gRefreshTimer = null; }
   localStorage.removeItem(GCAL_TOKEN_KEY);
 }
 function gcalConnected() {
   return !!gAccessToken && Date.now() < gTokenExpiry - 30000;
+}
+function gcalIsFresh() {
+  return !!gAccessToken && Date.now() < gTokenExpiry - 5 * 60 * 1000;
+}
+
+function gcalScheduleRefresh() {
+  if (gRefreshTimer) { clearTimeout(gRefreshTimer); gRefreshTimer = null; }
+  if (!gAccessToken) return;
+  const fireAt = gTokenExpiry - 5 * 60 * 1000;
+  const delay = Math.max(0, fireAt - Date.now());
+  gRefreshTimer = setTimeout(() => {
+    gcalSilentRefresh().catch(err => {
+      console.warn('[GCal] silent refresh failed:', err);
+      gNeedsReconnect = true;
+      gcalUpdateUI();
+    });
+  }, delay);
+}
+
+function gcalSilentRefresh() {
+  if (!gisInited || !gTokenClient) return Promise.reject(new Error('client_not_ready'));
+  if (gRefreshing && gPendingRefresh) {
+    // 이미 진행 중이면 같은 결과를 공유
+    return new Promise((resolve, reject) => {
+      const orig = gPendingRefresh;
+      gPendingRefresh = {
+        resolve: () => { orig.resolve(); resolve(); },
+        reject:  (e) => { orig.reject(e); reject(e); },
+      };
+    });
+  }
+  return new Promise((resolve, reject) => {
+    gRefreshing = true;
+    gPendingRefresh = { resolve, reject };
+    try {
+      gTokenClient.requestAccessToken({ prompt: '' });
+    } catch (e) {
+      gRefreshing = false;
+      gPendingRefresh = null;
+      reject(e);
+    }
+  });
+}
+
+async function gcalEnsureFresh() {
+  if (gNeedsReconnect) throw new Error('needs_reconnect');
+  if (!gAccessToken || Date.now() >= gTokenExpiry) throw new Error('not_connected');
+  if (gcalIsFresh()) return;
+  await gcalSilentRefresh();
 }
 
 function gcalUpdateUI() {
@@ -2571,13 +2630,18 @@ function gcalUpdateUI() {
   if (!btn) return;
   const icon = document.getElementById('gcal-btn-icon');
   const text = document.getElementById('gcal-btn-text');
-  if (gcalConnected()) {
+  btn.classList.remove('connected', 'needs-reconnect');
+  if (gNeedsReconnect) {
+    btn.classList.add('needs-reconnect');
+    icon.textContent = '⚠️';
+    text.textContent = '재연결 필요';
+    btn.title = 'Google 세션이 만료되었습니다. 클릭하여 재연결';
+  } else if (gcalConnected()) {
     btn.classList.add('connected');
     icon.textContent = '✓';
     text.textContent = '구글 연동됨';
     btn.title = 'Google Calendar 연결 해제';
   } else {
-    btn.classList.remove('connected');
     icon.textContent = '📅';
     text.textContent = '구글 연결';
     btn.title = 'Google Calendar 연동';
@@ -2608,17 +2672,36 @@ function initializeTokenClient() {
     client_id: GOOGLE_CLIENT_ID,
     scope: GOOGLE_SCOPES,
     callback: (resp) => {
+      const wasSilent = !!gPendingRefresh;
       if (resp.error) {
         console.warn('[GCal] token error:', resp);
-        toast('구글 인증이 취소되었거나 실패했습니다');
+        if (wasSilent) {
+          const pending = gPendingRefresh;
+          gRefreshing = false;
+          gPendingRefresh = null;
+          gNeedsReconnect = true;
+          gcalUpdateUI();
+          pending.reject(new Error(resp.error));
+        } else {
+          toast('구글 인증이 취소되었거나 실패했습니다');
+        }
         return;
       }
       gcalSaveToken(resp);
       if (gapiInited) gapi.client.setToken({ access_token: resp.access_token });
+      gNeedsReconnect = false;
+      gcalScheduleRefresh();
       gcalUpdateUI();
-      toast('구글 캘린더 연동됨');
-      // Process pending action if any
-      if (gPendingAction) { const fn = gPendingAction; gPendingAction = null; fn(); }
+      if (wasSilent) {
+        const pending = gPendingRefresh;
+        gRefreshing = false;
+        gPendingRefresh = null;
+        pending.resolve();
+        // 사용자에게 토스트 안 띄움 — 백그라운드 갱신
+      } else {
+        toast('구글 캘린더 연동됨');
+        if (gPendingAction) { const fn = gPendingAction; gPendingAction = null; fn(); }
+      }
     },
   });
   gisInited = true;
@@ -2630,7 +2713,7 @@ function gcalConnect(onSuccess) {
     toast('구글 라이브러리 로딩 중… 잠시 후 다시 시도해주세요');
     return;
   }
-  if (gcalConnected()) { if (onSuccess) onSuccess(); return; }
+  if (gcalConnected() && !gNeedsReconnect) { if (onSuccess) onSuccess(); return; }
   gPendingAction = onSuccess || null;
   // 첫 연결은 prompt='consent', 재연결은 ''
   const prompt = localStorage.getItem(GCAL_TOKEN_KEY) ? '' : 'consent';
@@ -2652,7 +2735,8 @@ function gcalDisconnect() {
 }
 
 async function addToGoogleCalendar(eventData) {
-  if (!gcalConnected() || !gapiInited) throw new Error('not_connected');
+  await gcalEnsureFresh();
+  if (!gapiInited) throw new Error('gapi_not_ready');
   const body = {
     summary: eventData.summary,
     description: eventData.description || '',
@@ -2746,7 +2830,11 @@ async function handleCalButtonClick(btn) {
       }
     }
   };
-  if (!gcalConnected()) {
+  if (gNeedsReconnect) {
+    if (!confirm('구글 세션이 만료되었습니다. 다시 연결할까요?')) return;
+    gNeedsReconnect = false;
+    gcalConnect(run);
+  } else if (!gcalConnected()) {
     if (!confirm('구글 캘린더에 자동 추가하려면 권한이 필요합니다.\n연결할까요?')) return;
     gcalConnect(run);
   } else {
@@ -2831,7 +2919,10 @@ function setupGoogleCalendar() {
   const btn = document.getElementById('gcal-btn');
   if (btn) {
     btn.addEventListener('click', () => {
-      if (gcalConnected()) {
+      if (gNeedsReconnect) {
+        gNeedsReconnect = false;
+        gcalConnect(() => toast('재연결되었습니다'));
+      } else if (gcalConnected()) {
         if (confirm('구글 캘린더 연결을 해제할까요?')) gcalDisconnect();
       } else {
         gcalConnect(() => toast('연결되었습니다. 이제 일정 카드의 "📅 캘린더 추가" 버튼을 눌러주세요'));
